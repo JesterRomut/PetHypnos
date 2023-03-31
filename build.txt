@@ -1,0 +1,3 @@
+displayName = Pet Hypnos in Hypnos Mod
+author = Jester Romut
+version = 0.1
