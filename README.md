@@ -3,58 +3,12 @@
 ![icon.png](icon.png)
 （呱！修普诺斯强袭创意工坊！）
 
-it's a fan art mod of a mod of a mod
+a fan art mod of a mod of a mod
 <br/>
-这是一个mod的mod的mod
+一个mod的mod的mod
 
-the cause of this is i violated the rules of the hypnos server(draw hypnos p*rn), after that i said i will work for hypnos for 24/7 therefore i worked on fanarts
-<br/>
-事情的起因是我犯了修普诺斯服务器的规则（画修普诺斯的烧图），于是我说我要24/7的给修普诺斯画同人图，于是我就画了
-
-mod includes:
-- angelic pet hypnos, can be used as pet or light pet (no difference except buff icon and item icon)
-- pet hypnos comes with its little aergia neurons
-- aergia neurons can somewhat be attracted to mouse and emit a little pink light
-
-本mod含有：
-- 可以放在宠物槽或者照明宠物槽的修普诺斯宠物（除了buff图标和物品图标没有区别）
-- 小修普诺斯带着它的小埃吉亚神经元
-- 小埃吉亚神经元会被鼠标吸引然后发出一点点粉光
-
-How to obtain:
-- this mod can run independently, but the only way to obtain the pet is defeating hypnos boss (hypnos in calamity mod) or you must use cheat
-
-如何获取：
-- 这个mod可以独立运行，但是搞到宠物的唯一方法是宰了修普诺斯boss，除了这个就只能开cheater
-
-Q: other exomechs?
-<br/>
-if i violated rules of a regular exomech server...
-
-Q: 别的巨械？
-<br/>
-如果我违反了巨械服务器的规则...
-
-Q: your pixel is staggeringly ugly
-<br/>
-you can draw a better version
-
-Q: 你的像素好几把丑，依托答辩，傻逼
-<br/>
-你可以画更好的，你最好不要指望画高精的小画家突然去画像素
-
-We live for hypnos! (and its fan arts)
-<br/>
-follow me on pixiv: https://www.pixiv.net/member.php?id=70124361
-<br/>
-follow hypnos on steam workshop: https://steamcommunity.com/sharedfiles/filedetails/?id=2865345084
-<br/>
-follow source code: https://github.com/JesterRomut/PetHypnos/
-
-关注pixiv喵，关注pixiv谢谢喵: https://www.pixiv.net/member.php?id=70124361
-<br/>
-关注修普诺斯喵：https://steamcommunity.com/sharedfiles/filedetails/?id=2865345084
-<br/>
-关注源码喵：https://github.com/JesterRomut/PetHypnos/
+天生万物以养人，世人犹怨天不仁，杀杀杀杀杀杀杀。 不知蝗蠹遍天下，苦尽苍生尽王臣，杀杀杀杀杀杀杀。 人之生矣有贵贱，贵人长为天恩眷，杀杀杀杀杀杀杀。 人生富贵总由天，草民之穷由天谴。 忽有狂徒夜磨刀，帝星飘摇荧惑高。
+翻天覆地从今始，杀人何须惜手劳。 不忠之人曰可杀！不孝之人曰可杀！ 不仁之人曰可杀！不义之人曰可杀！ 不礼不智不信人，大西王曰杀杀杀！
+我生不为逐鹿来，都门懒筑黄金台， 状元百官都如狗，总是刀下觳觫材。 传令麾下四王子，破城不须封刀匕。 山头代天树此碑，逆天之人立死跪亦死!
 
 ![vaporwave.png](https://jesterromut.github.io/resources/img/Hypnos/myHypnos1.png)
