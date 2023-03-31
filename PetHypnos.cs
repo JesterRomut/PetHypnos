@@ -12,10 +12,50 @@ namespace PetHypnos
 {
 	public class PetHypnos : Mod
 	{
-
+        
 	}
 
-	public class PetHypnosRecipes: ModSystem
+    public static class ModCompatibility
+    {
+        public static Mod CalamityMod
+        {
+            get
+            {
+                if (calamityMod == null)
+                {
+                    ModLoader.TryGetMod("CalamityMod", out calamityMod);
+                }
+                return calamityMod;
+            }
+        }
+        private static Mod calamityMod;
+
+        public static IModType CalamityModBloomRing
+        {
+            get
+            {
+                CalamityMod?.TryFind("BloomRing", out calamityModBloomRing);
+                return calamityModBloomRing;
+            }
+        }
+        private static IModType calamityModBloomRing;
+
+        public static Mod Hypnos
+        {
+            get
+            {
+                if (hypnos == null)
+                {
+                    ModLoader.TryGetMod("Hypnos", out hypnos);
+                }
+                return hypnos;
+            }
+        }
+        private static Mod hypnos;
+    }
+
+
+    public class PetHypnosRecipes: ModSystem
 	{
         public override void AddRecipes()
         {
@@ -32,7 +72,7 @@ namespace PetHypnos
     {
         public override void ModifyNPCLoot(NPC npc, NPCLoot npcLoot)
         {
-            if (npc.boss && ModLoader.TryGetMod("Hypnos", out Mod hypBossMod) && hypBossMod.TryFind("HypnosBoss", out ModNPC hypBoss))
+            if (npc.boss && (ModCompatibility.Hypnos?.TryFind("HypnosBoss", out ModNPC hypBoss) ?? false))
             {
                 //object comp = typeof(Pawn).GetMethod("GetComp").MakeGenericMethod(ModCompatibility.PickUpAndHaul.CompHauledToInventory).Invoke(pawn, null);
                 

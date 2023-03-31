@@ -16,6 +16,8 @@ using SteelSeries.GameSense;
 using Terraria.Graphics.Renderers;
 using IL.Terraria.GameContent.UI.States;
 using Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.CopyAnalysis;
+using static System.Formats.Asn1.AsnWriter;
+using System.IO;
 
 namespace PetHypnos.Hypnos
 {
@@ -26,14 +28,13 @@ namespace PetHypnos.Hypnos
         Stressed
     }
 
-
-    public class AIUtils
+    public static class AIUtils
     {
         public static bool bossIsAlive
         {
             get
             {
-                foreach(NPC npc in Main.npc)
+                foreach (NPC npc in Main.npc)
                 {
                     if (npc.active && npc.boss)
                     {
@@ -43,11 +44,18 @@ namespace PetHypnos.Hypnos
                 return false;
             }
         }
-        public static void DoChasePosition(Projectile projectile, Vector2 pos, float speed = 16f, float inertia = 60f, float closedSpeed = 4f, float closedInertia = 80f, bool idlePoke = true)
+
+        public static void DoChasePosition(Projectile projectile, Vector2 pos, float speed = 16f, float inertia = 60f, float closedSpeed = 4f, float closedInertia = 80f, float speedupThreshold = 800f)
         {
 
             Vector2 vectorToTarget = pos - projectile.Center;
             float distanceToTarget = vectorToTarget.Length();
+
+            if (distanceToTarget > speedupThreshold)
+            {
+                speed *= 1.25f;
+                inertia *= 0.75f;
+            }
 
             if (distanceToTarget <= 600f)
             {
@@ -64,7 +72,7 @@ namespace PetHypnos.Hypnos
                 vectorToTarget *= speed;
                 projectile.velocity = (projectile.velocity * (inertia - 1) + vectorToTarget) / inertia;
             }
-            else if (idlePoke && projectile.velocity == Vector2.Zero)
+            else if (projectile.velocity == Vector2.Zero)
             {
                 // If there is a case where it's not moving at all, give it a little "poke"
                 projectile.velocity.X = -0.15f;
@@ -72,7 +80,7 @@ namespace PetHypnos.Hypnos
             }
         }
 
-        public static void DoReachPosition(Projectile projectile, Vector2 pos, Player master,float flyingSpeed = 12f, float flyingInertia = 60f, float minFlyDistance = 20f, float speedupThreshold = 200f)
+        public static void DoReachPosition(Projectile projectile, Vector2 pos, Player master, float flyingSpeed = 12f, float flyingInertia = 60f, float minFlyDistance = 20f, float speedupThreshold = 300f)
         {
             Vector2 vectorToPlayer = master.Center - projectile.Center;
             vectorToPlayer += pos;
@@ -86,34 +94,66 @@ namespace PetHypnos.Hypnos
                 flyingSpeed *= 0.5f;
                 flyingInertia *= 1.2f;
             }
-                vectorToPlayer.Normalize();
-                vectorToPlayer *= flyingSpeed;
-                if (projectile.velocity == Vector2.Zero)
-                {
-                    projectile.velocity = new Vector2(-0.15f);
-                }
-                if (flyingInertia != 0f && flyingSpeed != 0f)
-                {
-                    projectile.velocity = (projectile.velocity * (flyingInertia - 1f) + vectorToPlayer) / flyingInertia;
-                }
+            vectorToPlayer.Normalize();
+            vectorToPlayer *= flyingSpeed;
+            if (projectile.velocity == Vector2.Zero)
+            {
+                projectile.velocity = new Vector2(-0.15f);
+            }
+            if (flyingInertia != 0f && flyingSpeed != 0f)
+            {
+                projectile.velocity = (projectile.velocity * (flyingInertia - 1f) + vectorToPlayer) / flyingInertia;
+            }
         }
     }
 
+    //public abstract class NeedMouseProjectile: ModProjectile
+    //{
+    //    public Vector2? correctMousePos = null;
+    //    public Vector2? CorrectMousePos
+    //    {
+    //        get
+    //        {
+    //            if (Main.myPlayer == Projectile.owner)
+    //            {
+    //                correctMousePos = Main.MouseWorld;
+    //            }
+    //            return correctMousePos;
+    //        }
+    //    }
+
+    //    public override void SendExtraAI(BinaryWriter writer)
+    //    {
+    //        writer.WriteVector2(correctMousePos ?? default);
+    //    }
+
+    //    public override void ReceiveExtraAI(BinaryReader reader)
+    //    {
+    //        correctMousePos = reader.ReadVector2();
+    //    }
+    //}
+
     public abstract class BaseAergiaNeuronProjectile : ModProjectile
     {
-        Projectile Master
-        {
-            get
-            {
-                int byUUID = Projectile.GetByUUID(Projectile.owner, Projectile.ai[0]);
-                Projectile UFO = Main.projectile.ElementAtOrDefault(byUUID);
-                if (byUUID >= 0 && UFO != null && UFO.type == MasterTypeID)
-                {
-                    return UFO;
-                }
-                return null;
-            }
-        }
+        //Projectile Master
+        //{
+        //    get
+        //    {
+        //        int byUUID = Projectile.GetByUUID(Projectile.owner, Projectile.ai[0]);
+        //        Projectile UFO = Main.projectile.ElementAtOrDefault(byUUID);
+        //        if (byUUID >= 0 && UFO != null && UFO.type == MasterTypeID)
+        //        {
+        //            return UFO;
+        //        }
+        //        return null;
+        //    }
+        //}
+
+        Projectile master;
+
+
+
+        public bool initialized = false;
 
         public abstract int MasterTypeID { get; }
 
@@ -145,7 +185,13 @@ namespace PetHypnos.Hypnos
 
         public override void AI()
         {
-            Projectile master = Master;
+            if (!initialized)
+            {
+                master = Main.projectile.ElementAtOrDefault((int)Projectile.ai[0]);
+                initialized = true;
+            }
+            //Projectile master = Master;
+
             if (master == null || !master.active)
             {
                 Projectile.timeLeft = 0;
@@ -153,6 +199,7 @@ namespace PetHypnos.Hypnos
             }
 
             Projectile.timeLeft = 2;
+
 
             // If your minion is flying, you want to do this independently of any conditions
             float overlapVelocity = 0.04f;
@@ -182,10 +229,11 @@ namespace PetHypnos.Hypnos
 
             //float distanceToTarget = vectorToTarget.Length();
             //follow master or follow mouse
-            if ((Main.MouseWorld - Projectile.Center).Length() < 40f && distanceToMaster > 50f)
+
+            if (Main.myPlayer == Projectile.owner && (Main.MouseWorld - Projectile.Center).Length() < 40f && distanceToMaster > 50f)
             {
                 AIUtils.DoChasePosition(Projectile, Main.MouseWorld, 20f, 40f, 6f, 16f);
-                
+
 
                 if (distanceToMaster > 120f)
                 {
@@ -197,14 +245,13 @@ namespace PetHypnos.Hypnos
                 }
 
                 Vector3 liiight = Color.HotPink.ToVector3() * 0.7f;
-                
+
                 if (red)
                 {
                     liiight = Color.HotPink.ToVector3() * 1.2f;
                 }
 
                 Lighting.AddLight(Projectile.Center, liiight);
-
                 //ModLoader.TryGetMod("CalamityMod", out Mod calamity);
                 //calamity?.Call("AddAbyssLightStrength", Main.player[Projectile.owner], 3);
             }
@@ -217,9 +264,10 @@ namespace PetHypnos.Hypnos
                 Vector2 target = new Vector2((float)(master.Center.X + radius * Math.Cos(angle)), (float)(master.Center.Y + radius * Math.Sin(angle)));
 
                 AIUtils.DoChasePosition(Projectile, target, 20f, 40f, 6f, 16f);
+
             }
 
-
+            Projectile.netUpdate = true;
 
         }
 
@@ -237,7 +285,7 @@ namespace PetHypnos.Hypnos
         }
     }
 
-    
+
 
     public abstract class BaseHypnosPetProjectile : ModProjectile
     {
@@ -252,6 +300,8 @@ namespace PetHypnos.Hypnos
 
         public static readonly Asset<Texture2D> tex = ModContent.Request<Texture2D>("PetHypnos/Hypnos/HypnosPetProjectile");
         public static readonly Asset<Texture2D> glowTex = ModContent.Request<Texture2D>("PetHypnos/Hypnos/HypnosPetProjectileGlow");
+
+        public static readonly int aergiaCount = 9;
 
         public abstract int AergiaID { get; }
         public abstract int BuffID { get; }
@@ -292,14 +342,18 @@ namespace PetHypnos.Hypnos
             return false;
         }
 
-        
+
 
         public void Init()
         {
-
-            for (int i = 0; i < 9; i++)
+            if (Main.myPlayer == Projectile.owner)
             {
-                Projectile.NewProjectile(Master.GetSource_Buff(Master.FindBuffIndex(BuffID)), Master.Center, Vector2.Zero, AergiaID, 0, 0f, Master.whoAmI, Projectile.whoAmI, 0f);
+
+
+                for (int i = 0; i < aergiaCount; i++)
+                {
+                    Projectile.NewProjectile(Master.GetSource_Buff(Master.FindBuffIndex(BuffID)), Master.Center, Vector2.Zero, AergiaID, 0, 0f, Master.whoAmI, Projectile.whoAmI, 0f);
+                }
             }
 
             initialized = true;
@@ -338,9 +392,10 @@ namespace PetHypnos.Hypnos
                 behavior = HypnosBehavior.Stressed;
             }
 
-            else if ((Main.MouseWorld - player.Center).Length() < 300f && distanceToIdlePosition < 400f)
+            else if (Main.myPlayer == Projectile.owner && ((Main.MouseWorld - player.Center).Length() < 300f && distanceToIdlePosition < 400f))
             {
                 behavior = HypnosBehavior.ChaseMouse;
+                Projectile.netUpdate = true;
             }
             else
             {
@@ -384,7 +439,12 @@ namespace PetHypnos.Hypnos
 
                     break;
                 case HypnosBehavior.ChaseMouse:
-                    AIUtils.DoChasePosition(Projectile, Main.MouseWorld);
+                    if (Main.myPlayer == Projectile.owner)
+                    {
+
+                        AIUtils.DoChasePosition(Projectile, Main.MouseWorld);
+                        Projectile.netUpdate = true;
+                    }
                     break;
                 case HypnosBehavior.Stressed:
                     AIUtils.DoReachPosition(Projectile, new Vector2(68f * (float)(-player.direction), -20f), player, 20f, 40f, 16f);
@@ -416,15 +476,23 @@ namespace PetHypnos.Hypnos
             }
             else if (Projectile.velocity.X < 0)
             {
-                    flipped = false;
+                flipped = false;
             }
+
+
+            //object ring = Activator.CreateInstance(ringType, Projectile.Center, Vector2.Zero, Color.Purple * 1.2f, Projectile.scale * 1.5f, 40);
+            //ring = new BloomRing(base.NPC.Center, Vector2.get_Zero(), Color.get_Purple() * 1.2f, base.NPC.scale * 1.5f, 40);
+            //if (ring != null)
+            //{
+            //    GeneralParticleHandler.SpawnParticle(ring);
+            //}
+
 
             //Lighting.AddLight(Projectile.Center, Color.White.ToVector3() * 0.78f);
         }
 
         public override bool PreDraw(ref Color lightColor)
         {
-
             Texture2D sprite = tex.Value;
             Texture2D spriteGlow = glowTex.Value;
 
@@ -437,21 +505,24 @@ namespace PetHypnos.Hypnos
             Rectangle frame = new Rectangle(frameStartX, frameStartY, frameWidth, frameHeight);
             Vector2 origin = new Vector2(Projectile.width / 2, Projectile.height / 2);
 
-            Color liiight = Lighting.GetColor((int)Projectile.position.X / 16, (int)Projectile.position.Y / 16);
+            //Color liiight = Lighting.GetColor((int)Projectile.position.X / 16, (int)Projectile.position.Y / 16);
 
             Vector2 hypnpos = Projectile.position - Main.screenPosition + new Vector2(frameWidth / 4, frameHeight / 4 - 2f);
 
-            Main.EntitySpriteDraw(sprite, hypnpos, (Rectangle?)frame, liiight, Projectile.rotation, origin, Projectile.scale, default(SpriteEffects), 0);
+            //Main.EntitySpriteDraw(spriteRing, hypnpos, (Rectangle?)null, Color.Purple, Projectile.rotation, origin, Projectile.scale * 1.5f, default(SpriteEffects), 0);
+
+            Main.EntitySpriteDraw(sprite, hypnpos, (Rectangle?)frame, lightColor, Projectile.rotation, origin, Projectile.scale, default(SpriteEffects), 0);
             Main.EntitySpriteDraw(spriteGlow, hypnpos, (Rectangle?)frame, Color.White, Projectile.rotation, origin, Projectile.scale, default(SpriteEffects), 0);
+
 
             return false;
             //return true;
         }
     }
 
-    
 
-    
+
+
 
     public abstract class BaseHypnosPetBuff : ModBuff
     {
@@ -469,7 +540,7 @@ namespace PetHypnos.Hypnos
             "History repeats itself", //历史总是惊人的相似
             "The Next Generation", //下一代
             "Aleph-0",
-            "HypnOS v5.64 Code:Vaporwave", 
+            "HypnOS v5.64 Code:Vaporwave",
             "Do android brain dream of electric serpent?", //仿生大脑会梦到电子长直吗？
             "Already dyed itself", //已经染过色了
             "Then the fifth angel sounded his trumpet" //第五位天使吹号
@@ -479,7 +550,7 @@ namespace PetHypnos.Hypnos
         {
             Random random = new Random();
             Main.buffNoTimeDisplay[((ModBuff)this).Type] = true;
-            
+
             Description.SetDefault(string.Concat(BuffDesc, "\n", bible.ElementAt(random.Next(bible.Count))));
         }
 
@@ -496,9 +567,9 @@ namespace PetHypnos.Hypnos
         }
     }
 
-    
 
-    
+
+
 
     public abstract class BaseHypnosPetItem : ModItem
     {
@@ -534,7 +605,7 @@ namespace PetHypnos.Hypnos
 
         public override void SetDefaults()
         {
-            
+
             Item.UseSound = SoundID.NPCHit4;
             //Item.damage = 30;
             //Item.knockBack = 3f;
@@ -545,7 +616,7 @@ namespace PetHypnos.Hypnos
             Item.value = Item.buyPrice(0, 30, 0, 0);
             Item.rare = ItemRarityID.Purple;
             Item.noMelee = true;
-            
+
         }
 
         public override void SetStaticDefaults()
@@ -559,7 +630,7 @@ namespace PetHypnos.Hypnos
 
     }
 
-    
 
-    
+
+
 }
