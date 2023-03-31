@@ -99,7 +99,7 @@ namespace PetHypnos.Hypnos
         }
     }
 
-    public class AergiaNeuronProjectile : ModProjectile
+    public abstract class BaseAergiaNeuronProjectile : ModProjectile
     {
         Projectile Master
         {
@@ -107,7 +107,7 @@ namespace PetHypnos.Hypnos
             {
                 int byUUID = Projectile.GetByUUID(Projectile.owner, Projectile.ai[0]);
                 Projectile UFO = Main.projectile.ElementAtOrDefault(byUUID);
-                if (byUUID >= 0 && UFO != null)
+                if (byUUID >= 0 && UFO != null && UFO.type == MasterTypeID)
                 {
                     return UFO;
                 }
@@ -115,9 +115,12 @@ namespace PetHypnos.Hypnos
             }
         }
 
+        public abstract int MasterTypeID { get; }
+
         public bool red = false;
         //BaseHypnosPetProjectile masterModProjectile => (BaseHypnosPetProjectile)master.ModProjectile;
 
+        public override string Texture => "PetHypnos/Hypnos/AergiaNeuronProjectile";
         public static readonly Asset<Texture2D> glowTex = ModContent.Request<Texture2D>("PetHypnos/Hypnos/AergiaNeuronGlow");
         public static readonly Asset<Texture2D> redGlowTex = ModContent.Request<Texture2D>("PetHypnos/Hypnos/AergiaNeuronRedGlow");
         public override void SetStaticDefaults()
@@ -234,6 +237,8 @@ namespace PetHypnos.Hypnos
         }
     }
 
+    
+
     public abstract class BaseHypnosPetProjectile : ModProjectile
     {
         public static readonly int frameCount = 4;
@@ -248,7 +253,8 @@ namespace PetHypnos.Hypnos
         public static readonly Asset<Texture2D> tex = ModContent.Request<Texture2D>("PetHypnos/Hypnos/HypnosPetProjectile");
         public static readonly Asset<Texture2D> glowTex = ModContent.Request<Texture2D>("PetHypnos/Hypnos/HypnosPetProjectileGlow");
 
-        public static readonly int aergiaID = ModContent.ProjectileType<AergiaNeuronProjectile>();
+        public abstract int AergiaID { get; }
+        public abstract int BuffID { get; }
 
         public Player Master => Main.player[Projectile.owner];
 
@@ -286,14 +292,14 @@ namespace PetHypnos.Hypnos
             return false;
         }
 
-        public abstract int GetBuffType();
+        
 
         public void Init()
         {
 
             for (int i = 0; i < 9; i++)
             {
-                Projectile.NewProjectile(Master.GetSource_Buff(Master.FindBuffIndex(GetBuffType())), Master.Center, Vector2.Zero, aergiaID, 0, 0f, Master.whoAmI, Projectile.whoAmI, 0f);
+                Projectile.NewProjectile(Master.GetSource_Buff(Master.FindBuffIndex(BuffID)), Master.Center, Vector2.Zero, AergiaID, 0, 0f, Master.whoAmI, Projectile.whoAmI, 0f);
             }
 
             initialized = true;
@@ -306,9 +312,9 @@ namespace PetHypnos.Hypnos
             Player player = Master;
             if (player.dead || !player.active)
             {
-                player.ClearBuff(GetBuffType());
+                player.ClearBuff(BuffID);
             }
-            if (player.HasBuff(GetBuffType()))
+            if (player.HasBuff(BuffID))
             {
                 Projectile.timeLeft = 2;
             }
@@ -346,7 +352,7 @@ namespace PetHypnos.Hypnos
             foreach (Projectile other in Main.projectile)
             {
                 // Fix overlap with other minions
-                if (other.whoAmI != Projectile.whoAmI && other.active && other.type != aergiaID && other.owner == Projectile.owner && Math.Abs(Projectile.position.X - other.position.X) + Math.Abs(Projectile.position.Y - other.position.Y) < Projectile.width)
+                if (other.whoAmI != Projectile.whoAmI && other.active && other.type != AergiaID && other.owner == Projectile.owner && Math.Abs(Projectile.position.X - other.position.X) + Math.Abs(Projectile.position.Y - other.position.Y) < Projectile.width)
                 {
                     if (Projectile.position.X < other.position.X) Projectile.velocity.X -= overlapVelocity;
                     else Projectile.velocity.X += overlapVelocity;
@@ -404,13 +410,13 @@ namespace PetHypnos.Hypnos
                 }
             }
 
-            if (Projectile.velocity.X >= 0)
+            if (Projectile.velocity.X > 0)
             {
                 flipped = true;
             }
-            else
+            else if (Projectile.velocity.X < 0)
             {
-                flipped = false;
+                    flipped = false;
             }
 
             //Lighting.AddLight(Projectile.Center, Color.White.ToVector3() * 0.78f);
@@ -443,27 +449,9 @@ namespace PetHypnos.Hypnos
         }
     }
 
-    public class HypnosPetProjectile : BaseHypnosPetProjectile
-    {
-        public override int GetBuffType()
-        {
-            return ModContent.BuffType<HypnosPetBuff>();
-        }
-    }
+    
 
-    public class HypnosLightPetProjectile : BaseHypnosPetProjectile
-    {
-        public override void SetStaticDefaults()
-        {
-            base.SetStaticDefaults();
-            ProjectileID.Sets.LightPet[Projectile.type] = true;
-        }
-
-        public override int GetBuffType()
-        {
-            return ModContent.BuffType<HypnosLightPetBuff>();
-        }
-    }
+    
 
     public abstract class BaseHypnosPetBuff : ModBuff
     {
@@ -483,7 +471,8 @@ namespace PetHypnos.Hypnos
             "Aleph-0",
             "HypnOS v5.64 Code:Vaporwave", 
             "Do android brain dream of electric serpent?", //仿生大脑会梦到电子长直吗？
-            "Already dyed itself" //已经染过色了
+            "Already dyed itself", //已经染过色了
+            "Then the fifth angel sounded his trumpet" //第五位天使吹号
         };
 
         public override void SetStaticDefaults()
@@ -491,67 +480,25 @@ namespace PetHypnos.Hypnos
             Random random = new Random();
             Main.buffNoTimeDisplay[((ModBuff)this).Type] = true;
             
-            Description.SetDefault(string.Concat(GetBuffDesc(), "\n", bible.ElementAt(random.Next(bible.Count))));
+            Description.SetDefault(string.Concat(BuffDesc, "\n", bible.ElementAt(random.Next(bible.Count))));
         }
 
-        public abstract int GetProjectileType();
-        public abstract string GetBuffDesc();
+        public abstract int ProjectileTypeID { get; }
+        public abstract string BuffDesc { get; }
 
         public override void Update(Player player, ref int buffIndex)
         {
             player.buffTime[buffIndex] = 18000;
-            if (player.ownedProjectileCounts[GetProjectileType()] <= 0 && ((Entity)player).whoAmI == Main.myPlayer)
+            if (player.ownedProjectileCounts[ProjectileTypeID] <= 0 && ((Entity)player).whoAmI == Main.myPlayer)
             {
-                Projectile.NewProjectile(player.GetSource_Buff(buffIndex), ((Entity)player).Center, Vector2.Zero, GetProjectileType(), 0, 0f, ((Entity)player).whoAmI, 0f, 0f);
+                Projectile.NewProjectile(player.GetSource_Buff(buffIndex), ((Entity)player).Center, Vector2.Zero, ProjectileTypeID, 0, 0f, ((Entity)player).whoAmI, 0f, 0f);
             }
         }
     }
 
-    public class HypnosPetBuff : BaseHypnosPetBuff
-    {
+    
 
-        public override void SetStaticDefaults()
-        {
-            base.SetStaticDefaults();
-
-            DisplayName.SetDefault("City Pop");
-            Main.vanityPet[((ModBuff)this).Type] = true;
-        }
-
-        public override int GetProjectileType()
-        {
-            return ModContent.ProjectileType<HypnosPetProjectile>();
-        }
-
-        public override string GetBuffDesc()
-        {
-            return "Hypnos will play its radio (with h-pop and city pop) behind you";
-        }
-
-    }
-
-    public class HypnosLightPetBuff : BaseHypnosPetBuff
-    {
-
-        public override void SetStaticDefaults()
-        {
-            base.SetStaticDefaults();
-
-            DisplayName.SetDefault("Neurofunk");
-            Main.lightPet[Type] = true;
-        }
-
-        public override int GetProjectileType()
-        {
-            return ModContent.ProjectileType<HypnosLightPetProjectile>();
-        }
-
-        public override string GetBuffDesc()
-        {
-            return "Hypnos will play its radio (with neurofunk) behind you";
-        }
-
-    }
+    
 
     public abstract class BaseHypnosPetItem : ModItem
     {
@@ -604,75 +551,15 @@ namespace PetHypnos.Hypnos
         public override void SetStaticDefaults()
         {
             SacrificeTotal = 1;
-            Tooltip.SetDefault(string.Concat(GetFirstLine(), "\nSummons the great✰ Hypnos' projection to charm you\nThe great✰ Hypnos comes with its Aergia Neurons\nWill somewhat be attracted by mouse\n", GetLastLine()));
+            Tooltip.SetDefault(string.Concat(FirstLine, "\nSummons the great✰ Hypnos' projection to charm you\nThe great✰ Hypnos comes with its Aergia Neurons\nWill somewhat be attracted by mouse\n", LastLine));
         }
 
-        public abstract string GetFirstLine();
-        public abstract string GetLastLine();
+        public abstract string FirstLine { get; }
+        public abstract string LastLine { get; }
 
     }
 
-    public class HypnosPetItem : BaseHypnosPetItem
-    {
+    
 
-        public override void SetDefaults()
-        {
-            Item.CloneDefaults(ItemID.ZephyrFish);
-
-            base.SetDefaults();
-
-            Item.buffType = ModContent.BuffType<HypnosPetBuff>();
-            Item.shoot = ModContent.ProjectileType<HypnosPetProjectile>();
-        }
-        public override void SetStaticDefaults()
-        {
-            base.SetStaticDefaults();
-
-            DisplayName.SetDefault("Tape of Hypnosis"); //修普诺斯创世纪之磁带
-            
-
-        }
-
-        public override string GetFirstLine()
-        {
-            return "Full of hypnagogic pops"; //塞满了H-pop
-        }
-
-        public override string GetLastLine()
-        {
-            return "'Let the bass kick.'";
-        }
-
-    }
-
-    public class HypnosLightPetItem : BaseHypnosPetItem
-    {
-
-        public override void SetDefaults()
-        {
-            Item.CloneDefaults(ItemID.DD2PetGhost);
-
-            base.SetDefaults();
-
-            Item.buffType = ModContent.BuffType<HypnosLightPetBuff>();
-            Item.shoot = ModContent.ProjectileType<HypnosLightPetProjectile>();
-        }
-        public override void SetStaticDefaults()
-        {
-            base.SetStaticDefaults();
-
-            DisplayName.SetDefault("Tape of Hypnodus"); //修普诺斯出实验室记之磁带
-        }
-
-        public override string GetFirstLine()
-        {
-            return "Full of neurofunks"; //全是神经放克
-        }
-
-        public override string GetLastLine()
-        {
-            return "'what do you know what do you play what do you remember what do you love'"; //你知道什么你扮演什么你记得什么你爱着什么
-        }
-
-    }
+    
 }
