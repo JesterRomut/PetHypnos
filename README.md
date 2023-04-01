@@ -3,6 +3,8 @@
 ![icon.png](icon.png)
 （呱！修普诺斯强袭创意工坊！）
 
+https://steamcommunity.com/sharedfiles/filedetails/?id=2955621858
+
 a fan art mod of a mod of a mod
 <br/>
 一个mod的mod的mod
