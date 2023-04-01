@@ -1,0 +1,49 @@
+
+Mods: {
+	PetHypnos: {
+		Projectiles: {
+			AergiaNeuronLightProjectile.DisplayName: Aergia Neuron
+			AergiaNeuronProjectile.DisplayName: Aergia Neuron
+			HypnosLightPetProjectile.DisplayName: Denpa-kei Hypnos
+			HypnosPetProjectile.DisplayName: Denpa-kei Hypnos
+		}
+
+		Buffs: {
+			HypnosLightPetBuff: {
+				DisplayName: Neurofunk
+				Description: Hypnos will play its radio (with neurofunk) behind you
+			}
+
+			HypnosPetBuff: {
+				DisplayName: City Pop
+				Description: Hypnos will play its radio (with h-pop and city pop) behind you
+			}
+		}
+
+		Items: {
+			HypnosLightPetItem: {
+				DisplayName: Tape of Hypnodus
+				Tooltip:
+					'''
+					Full of neurofunks
+					Summons the great✰ Hypnos' projection to charm you
+					The great✰ Hypnos comes with its Aergia Neurons
+					Will somewhat be attracted by mouse
+					'what do you know what do you play what do you remember what do you love'
+					'''
+			}
+
+			HypnosPetItem: {
+				DisplayName: Tape of Hypnosis
+				Tooltip:
+					'''
+					Full of hypnagogic pops
+					Summons the great✰ Hypnos' projection to charm you
+					The great✰ Hypnos comes with its Aergia Neurons
+					Will somewhat be attracted by mouse
+					'Let the bass kick.'
+					'''
+			}
+		}
+	}
+}

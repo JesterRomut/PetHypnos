@@ -166,6 +166,7 @@ namespace PetHypnos.Hypnos
         public override void SetStaticDefaults()
         {
             DisplayName.SetDefault("Aergia Neuron");
+            DisplayName.AddTranslation(7, "埃吉亚神经元");
             Main.projPet[Projectile.type] = true;
             //Main.projFrames[Projectile.type] = 4;
         }
@@ -314,6 +315,7 @@ namespace PetHypnos.Hypnos
         public override void SetStaticDefaults()
         {
             DisplayName.SetDefault("Denpa-kei Hypnos");
+            DisplayName.AddTranslation(7, "电波系-修普诺斯");
             Main.projPet[Projectile.type] = true;
             //Main.projFrames[Projectile.type] = 4;
         }
@@ -546,16 +548,29 @@ namespace PetHypnos.Hypnos
             "Then the fifth angel sounded his trumpet" //第五位天使吹号
         };
 
+        public string Curren
+        {
+            get
+            {
+                if (curren == null)
+                {
+                    curren = bible.ElementAt(new Random().Next(bible.Count));
+                }
+                return curren;
+            }
+        }
+
+        private string curren;
+
         public override void SetStaticDefaults()
         {
-            Random random = new Random();
+            
             Main.buffNoTimeDisplay[((ModBuff)this).Type] = true;
 
-            Description.SetDefault(string.Concat(BuffDesc, "\n", bible.ElementAt(random.Next(bible.Count))));
+            
         }
 
         public abstract int ProjectileTypeID { get; }
-        public abstract string BuffDesc { get; }
 
         public override void Update(Player player, ref int buffIndex)
         {
@@ -564,6 +579,12 @@ namespace PetHypnos.Hypnos
             {
                 Projectile.NewProjectile(player.GetSource_Buff(buffIndex), ((Entity)player).Center, Vector2.Zero, ProjectileTypeID, 0, 0f, ((Entity)player).whoAmI, 0f, 0f);
             }
+        }
+
+        public override void ModifyBuffTip(ref string tip, ref int rare)
+        {
+            
+            tip = string.Concat(tip, "\n", Curren);
         }
     }
 
@@ -622,11 +643,8 @@ namespace PetHypnos.Hypnos
         public override void SetStaticDefaults()
         {
             SacrificeTotal = 1;
-            Tooltip.SetDefault(string.Concat(FirstLine, "\nSummons the great✰ Hypnos' projection to charm you\nThe great✰ Hypnos comes with its Aergia Neurons\nWill somewhat be attracted by mouse\n", LastLine));
+            
         }
-
-        public abstract string FirstLine { get; }
-        public abstract string LastLine { get; }
 
     }
 
