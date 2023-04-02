@@ -133,7 +133,42 @@ namespace PetHypnos.Hypnos
     //    }
     //}
 
-    public abstract class BaseAergiaNeuronProjectile : ModProjectile
+    public abstract class BaseAergiaNeuronProjectile: ModProjectile
+    {
+        public override string Texture => "PetHypnos/Hypnos/AergiaNeuronProjectile";
+        public static readonly Asset<Texture2D> glowTex = ModContent.Request<Texture2D>("PetHypnos/Hypnos/AergiaNeuronGlow");
+
+        public bool red = false;
+        public static readonly Asset<Texture2D> redGlowTex = ModContent.Request<Texture2D>("PetHypnos/Hypnos/AergiaNeuronRedGlow");
+
+        public override void SetDefaults()
+        {
+            Projectile.width = 16;
+            Projectile.height = 16;
+            Projectile.friendly = true;
+            Projectile.penetrate = -1;
+            Projectile.tileCollide = false;
+            Projectile.aiStyle = -1;
+            Projectile.scale = 0.6f;
+            Projectile.ignoreWater = true;
+            Projectile.netImportant = true;
+        }
+
+        public override void PostDraw(Color lightColor)
+        {
+            Texture2D sprite = red ? redGlowTex.Value : glowTex.Value;
+            float originOffsetX = (sprite.Width - Projectile.width) * 0.5f + Projectile.width * 0.5f + DrawOriginOffsetX;
+
+            Rectangle frame = new Rectangle(0, 0, sprite.Width, sprite.Height);
+
+            Vector2 origin = new Vector2(originOffsetX, Projectile.height / 2 - DrawOriginOffsetY);
+
+
+            Main.EntitySpriteDraw(sprite, Projectile.position - Main.screenPosition + new Vector2(originOffsetX + DrawOffsetX, Projectile.height / 2 + Projectile.gfxOffY), (Rectangle?)frame, Color.White, Projectile.rotation, origin, Projectile.scale, default(SpriteEffects), 0);
+        }
+    }
+
+    public abstract class BaseAergiaNeuronPetProjectile : BaseAergiaNeuronProjectile
     {
         //Projectile Master
         //{
@@ -157,32 +192,19 @@ namespace PetHypnos.Hypnos
 
         public abstract int MasterTypeID { get; }
 
-        public bool red = false;
+        
         //BaseHypnosPetProjectile masterModProjectile => (BaseHypnosPetProjectile)master.ModProjectile;
 
-        public override string Texture => "PetHypnos/Hypnos/AergiaNeuronProjectile";
-        public static readonly Asset<Texture2D> glowTex = ModContent.Request<Texture2D>("PetHypnos/Hypnos/AergiaNeuronGlow");
-        public static readonly Asset<Texture2D> redGlowTex = ModContent.Request<Texture2D>("PetHypnos/Hypnos/AergiaNeuronRedGlow");
+
         public override void SetStaticDefaults()
         {
-            DisplayName.SetDefault("Aergia Neuron");
-            DisplayName.AddTranslation(7, "埃吉亚神经元");
+            DisplayName.SetDefault("Denpa-kei Aergia Neuron");
+            DisplayName.AddTranslation(7, "电波系-埃吉亚神经元");
             Main.projPet[Projectile.type] = true;
             //Main.projFrames[Projectile.type] = 4;
         }
 
-        public override void SetDefaults()
-        {
-            Projectile.width = 16;
-            Projectile.height = 16;
-            Projectile.friendly = true;
-            Projectile.penetrate = -1;
-            Projectile.tileCollide = false;
-            Projectile.aiStyle = -1;
-            Projectile.scale = 0.6f;
-            Projectile.ignoreWater = true;
-            Projectile.netImportant = true;
-        }
+        
 
         public override void AI()
         {
@@ -272,18 +294,7 @@ namespace PetHypnos.Hypnos
 
         }
 
-        public override void PostDraw(Color lightColor)
-        {
-            Texture2D sprite = red ? redGlowTex.Value : glowTex.Value;
-            float originOffsetX = (sprite.Width - Projectile.width) * 0.5f + Projectile.width * 0.5f + DrawOriginOffsetX;
-
-            Rectangle frame = new Rectangle(0, 0, sprite.Width, sprite.Height);
-
-            Vector2 origin = new Vector2(originOffsetX, Projectile.height / 2 - DrawOriginOffsetY);
-
-
-            Main.EntitySpriteDraw(sprite, Projectile.position - Main.screenPosition + new Vector2(originOffsetX + DrawOffsetX, Projectile.height / 2 + Projectile.gfxOffY), (Rectangle?)frame, Color.White, Projectile.rotation, origin, Projectile.scale, default(SpriteEffects), 0);
-        }
+        
     }
 
 
@@ -520,6 +531,23 @@ namespace PetHypnos.Hypnos
             return false;
             //return true;
         }
+
+        public virtual void SpecialStarKill()
+        {
+            Master.ClearBuff(BuffID);
+            if (Main.netMode == NetmodeID.SinglePlayer || Main.netMode == NetmodeID.Server)
+            {
+                Item.NewItem(Projectile.GetSource_Death(), Projectile.getRect(), ModContent.ItemType<ToyAergianTechnistaff.ToyAergianTechnistaff>());
+            }
+            
+            if (Main.netMode != NetmodeID.Server)
+            {
+                Gore.NewGore(Projectile.GetSource_Death(), Projectile.position, Projectile.velocity, Mod.Find<ModGore>("PetHypnos1").Type, Projectile.scale);
+                Gore.NewGore(Projectile.GetSource_Death(), Projectile.position, Projectile.velocity, Mod.Find<ModGore>("PetHypnos2").Type, Projectile.scale);
+            }
+            Projectile.Kill();
+        }
+
     }
 
 
@@ -531,7 +559,7 @@ namespace PetHypnos.Hypnos
         public static readonly HashSet<string> bible = new HashSet<string>() {
             "Tiny Hypnos' assault on Thanatos keep", //小修普诺斯强袭塔纳堡
             "The day you went away",
-            "Hi",
+            "Oh haiiii!",
             "Hypnos brings forth innumerable things to nurture man", //修普诺斯生万物以养人
             "From the great above to the great below", //从伟大的天到伟大的地
             "When the flying birds are done with, the good bow is stored away; when the sly rabbit dies, the hunting dog is boiled.", //飞鸟尽，良弓藏；狡兔死，走狗烹
@@ -545,7 +573,9 @@ namespace PetHypnos.Hypnos
             "HypnOS v5.64 Code:Vaporwave",
             "Do android brain dream of electric serpent?", //仿生大脑会梦到电子长直吗？
             "Already dyed itself", //已经染过色了
-            "Then the fifth angel sounded his trumpet" //第五位天使吹号
+            "Then the fifth angel sounded his trumpet", //第五位天使吹号
+            "Libet's delay",
+            "42"
         };
 
         public string Curren
@@ -577,6 +607,8 @@ namespace PetHypnos.Hypnos
             player.buffTime[buffIndex] = 18000;
             if (player.ownedProjectileCounts[ProjectileTypeID] <= 0 && ((Entity)player).whoAmI == Main.myPlayer)
             {
+                //player.DelBuff(buffIndex);
+                //buffIndex--;
                 Projectile.NewProjectile(player.GetSource_Buff(buffIndex), ((Entity)player).Center, Vector2.Zero, ProjectileTypeID, 0, 0f, ((Entity)player).whoAmI, 0f, 0f);
             }
         }
@@ -634,8 +666,8 @@ namespace PetHypnos.Hypnos
             Item.width = 16;
             Item.height = 16;
             //Item.useStyle = ItemUseStyleID.SwingThrow;
-            Item.value = Item.buyPrice(0, 30, 0, 0);
-            Item.rare = ItemRarityID.Purple;
+            Item.value = Item.buyPrice(1, 0, 0, 0);
+            Item.rare = ModCompatibility.VioletOrPurple;
             Item.noMelee = true;
 
         }

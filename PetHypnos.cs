@@ -30,15 +30,18 @@ namespace PetHypnos
         }
         private static Mod calamityMod;
 
-        public static IModType CalamityModBloomRing
+        public static int VioletOrPurple
         {
             get
             {
-                CalamityMod?.TryFind("BloomRing", out calamityModBloomRing);
-                return calamityModBloomRing;
+                if (calamityModVioletID == null && (CalamityMod?.TryFind("Violet", out ModRarity calamityModViolet) ?? false))
+                {
+                    calamityModVioletID = calamityModViolet.Type;
+                }
+                return calamityModVioletID ?? ItemRarityID.Purple;
             }
         }
-        private static IModType calamityModBloomRing;
+        private static int? calamityModVioletID = null;
 
         public static Mod Hypnos
         {
@@ -77,16 +80,34 @@ namespace PetHypnos
                 //object comp = typeof(Pawn).GetMethod("GetComp").MakeGenericMethod(ModCompatibility.PickUpAndHaul.CompHauledToInventory).Invoke(pawn, null);
                 
                 //int hypBossType = typeof(ModContent).GetMethod("NPCType").MakeGenericMethod(hypBoss).Invoke();
-                int hypBossType = hypBoss.Type;
                 // First, we need to check the npc.type to see if the code is running for the vanilla NPCwe want to change
-                if (npc.type == hypBossType)
+                if (npc.type == hypBoss.Type)
                 {
-                    // This is where we add item drop rules for VampireBat, here is a simple example:
-                    npcLoot.Add(ItemDropRule.Common(ModContent.ItemType<HypnosPetItem>()));
+                        npcLoot.Add(ItemDropRule.Common(ModContent.ItemType<HypnosPetItem>()));
+                    
                 }
                 // We can use other if statements here to adjust the drop rules of other vanilla NPC
             }
 
+        }
+
+        public override void OnKill(NPC npc)
+        {
+            if (npc.boss && (ModCompatibility.Hypnos?.TryFind("HypnosBoss", out ModNPC hypBoss) ?? false))
+            {
+                if (npc.type == hypBoss.Type)
+                {
+                    int hypPetType = ModContent.ProjectileType<HypnosPetProjectile>();
+                    int hypLightPetType = ModContent.ProjectileType<HypnosLightPetProjectile>();
+                    foreach (Projectile projectile in Main.projectile)
+                    {
+                        if (projectile.active && (projectile.type == hypPetType || projectile.type == hypLightPetType))
+                        {
+                            ((BaseHypnosPetProjectile)projectile.ModProjectile).SpecialStarKill();
+                        }
+                    }
+                }
+            }
         }
     }
 

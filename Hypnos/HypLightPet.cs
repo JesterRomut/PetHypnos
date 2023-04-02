@@ -9,7 +9,7 @@ using Terraria.ID;
 
 namespace PetHypnos.Hypnos
 {
-    public class AergiaNeuronLightProjectile : BaseAergiaNeuronProjectile
+    public class AergiaNeuronLightProjectile : BaseAergiaNeuronPetProjectile
     {
         public override int MasterTypeID => ModContent.ProjectileType<HypnosLightPetProjectile>();
 
@@ -29,7 +29,11 @@ namespace PetHypnos.Hypnos
             ProjectileID.Sets.LightPet[Projectile.type] = true;
         }
 
-        
+        public override void SpecialStarKill()
+        {
+            Master.ToggleLight();
+            base.SpecialStarKill();
+        }
     }
 
     public class HypnosLightPetBuff : BaseHypnosPetBuff
