@@ -7,13 +7,133 @@ using log4net;
 using System;
 using Microsoft.Xna.Framework;
 using PetHypnos.Hypnos;
+using Terraria.GameInput;
+using static Humanizer.In;
+using System.IO;
 
 namespace PetHypnos
 {
 	public class PetHypnos : Mod
 	{
+        public override void HandlePacket(BinaryReader reader, int whoAmI)
+        {
+            PetHypnosMessageType msgType = (PetHypnosMessageType)reader.ReadByte();
+            switch (msgType)
+            {
+                case PetHypnosMessageType.SyncMousePos:
+                    Main.player[reader.ReadInt32()].GetModPlayer<PetHypnosPlayer>().HandleMousePos(reader);
+                    break;
+                case PetHypnosMessageType.SyncMouseRightClick:
+                    Main.player[reader.ReadInt32()].GetModPlayer<PetHypnosPlayer>().HandleMouseRightClick(reader);
+                    break;
+            }
+            }
+    }
+
+    public enum PetHypnosMessageType
+    {
+        SyncMousePos,
+        SyncMouseRightClick
+    }
+
+    public static class PetHypnosExtensions
+    {
+        public static void SendPacket(this Player player, ModPacket packet, bool server)
+        {
+            if (!server)
+            {
+                packet.Send();
+            }
+            else
+            {
+                packet.Send(-1, player.whoAmI);
+            }
+        }
+    }
+
+    public class PetHypnosPlayer : ModPlayer
+    {
+        private bool shouldSyncMouse = false;
+
+        public bool shouldCheckRightClick = false;
+        public bool rightClicked = false;
+        private bool rightClickedOld = false;
+
+        public bool shouldCheckMouseWorld = false;
+        public Vector2 mouseWorld;
+        private Vector2 mouseWorldOld;
+
+        public float spinOffset = 0;
+        public int currentGhostHypnosIndex = -1;
+
+        public override void PostUpdateMiscEffects()
+        {
+            if (Player.whoAmI == Main.myPlayer && Main.netMode == NetmodeID.MultiplayerClient && shouldSyncMouse) {
+                shouldSyncMouse = false;
+                SyncMousePos(false);
+                SyncMouseRightClick(false);
+            }
+        }
+
         
-	}
+
+        public void SyncMousePos(bool isServer)
+        {
+            ModPacket packet = Mod.GetPacket();
+            packet.Write((byte)PetHypnosMessageType.SyncMousePos);
+            packet.Write(Player.whoAmI);
+            packet.WriteVector2(mouseWorld);
+            Player.SendPacket(packet, isServer);
+        }
+
+        internal void HandleMousePos(BinaryReader reader)
+        {
+            mouseWorld = reader.ReadVector2();
+            if (Main.netMode == NetmodeID.Server)
+            {
+                SyncMousePos(true);
+            }
+        }
+
+        public void SyncMouseRightClick(bool isServer)
+        {
+            ModPacket packet = Mod.GetPacket();
+            packet.Write((byte)PetHypnosMessageType.SyncMouseRightClick);
+            packet.Write(Player.whoAmI);
+            packet.WriteVector2(mouseWorld);
+            Player.SendPacket(packet, isServer);
+        }
+
+        public void HandleMouseRightClick(BinaryReader reader)
+        {
+            rightClicked = reader.ReadBoolean();
+            if (Main.netMode == NetmodeID.Server)
+            {
+                SyncMouseRightClick(true);
+            }
+        }
+
+        public override void PreUpdate()
+        {
+            if (Main.myPlayer == Player.whoAmI)
+            {
+                rightClicked = PlayerInput.Triggers.Current.MouseRight;
+                mouseWorld = Main.MouseWorld;
+                if (shouldCheckRightClick && rightClicked != rightClickedOld)
+                {
+                    rightClickedOld = rightClicked;
+                    shouldSyncMouse = true;
+                    shouldCheckRightClick = false;
+                }
+                if (shouldCheckMouseWorld && Vector2.Distance(mouseWorld, mouseWorldOld) > 5f)
+                {
+                    mouseWorldOld = mouseWorld;
+                    shouldSyncMouse = true;
+                    shouldCheckMouseWorld = false;
+                }
+            }
+        }
+    }
 
     public static class ModCompatibility
     {

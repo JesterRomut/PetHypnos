@@ -9,7 +9,7 @@ mod includes:
 - pet hypnos comes with its little aergia neurons
 - aergia neurons can somewhat be attracted to mouse and emit a little pink light
 - pet buff tooltip changes every time when you load the mod
-- toy aergian technistaff dropped by pet hypnos (with its g0res) when defeating hypnos boss
+- toy aergian technistaff(same behavior as aergian technistaff's fandom page) dropped by pet hypnos (with its g0res) when defeating hypnos boss
 本mod含有：
 - 可以放在宠物槽或者照明宠物槽的修普诺斯宠物（除了buff图标和物品图标没有区别）
 - 小修普诺斯带着它的小埃吉亚神经元

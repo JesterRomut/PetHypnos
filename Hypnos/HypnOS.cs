@@ -18,6 +18,7 @@ using IL.Terraria.GameContent.UI.States;
 using Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.CopyAnalysis;
 using static System.Formats.Asn1.AsnWriter;
 using System.IO;
+using static Humanizer.In;
 
 namespace PetHypnos.Hypnos
 {
@@ -80,7 +81,7 @@ namespace PetHypnos.Hypnos
             }
         }
 
-        public static void DoReachPosition(Projectile projectile, Vector2 pos, Player master, float flyingSpeed = 12f, float flyingInertia = 60f, float minFlyDistance = 20f, float speedupThreshold = 300f)
+        public static void DoReachPosition(Projectile projectile, Vector2 pos, Entity master, float flyingSpeed = 12f, float flyingInertia = 60f, float minFlyDistance = 20f, float speedupThreshold = 300f)
         {
             Vector2 vectorToPlayer = master.Center - projectile.Center;
             vectorToPlayer += pos;
@@ -96,14 +97,57 @@ namespace PetHypnos.Hypnos
             }
             vectorToPlayer.Normalize();
             vectorToPlayer *= flyingSpeed;
-            if (projectile.velocity == Vector2.Zero)
-            {
-                projectile.velocity = new Vector2(-0.15f);
-            }
+            //if (projectile.velocity == Vector2.Zero)
+            //{
+            //    projectile.velocity = new Vector2(-0.15f);
+            //}
+            
             if (flyingInertia != 0f && flyingSpeed != 0f)
             {
                 projectile.velocity = (projectile.velocity * (flyingInertia - 1f) + vectorToPlayer) / flyingInertia;
             }
+
+            if ((double)projectile.velocity.X > -0.1 && (double)projectile.velocity.X < 0.1)
+            {
+                projectile.velocity.X = 0f;
+            }
+            if ((double)projectile.velocity.Y > -0.1 && (double)projectile.velocity.Y < 0.1)
+            {
+                projectile.velocity.Y = 0f;
+            }
+        }
+
+
+
+        //public static Vector2 MoveTo(Vector2 currentPosition, Vector2 targetPosition, float maxAmountToMove)
+        //{
+        //    Vector2 vectorTo = targetPosition - currentPosition;
+        //    if (vectorTo.Length() < maxAmountToMove)
+        //    {
+        //        return targetPosition;
+        //    }
+        //    return currentPosition + vectorTo.SafeNormalize(Vector2.Zero) * maxAmountToMove;
+        //}
+
+        //public static void DoMoveTo(Projectile projectile, Vector2 current, Vector2 dest, float maxAmountToMove = 20f)
+        //{
+        //    projectile.velocity = Vector2.Lerp(projectile.velocity, AIUtils.MoveTo(current, dest, maxAmountToMove), 0.04f);
+        //}
+
+        //public static void DoMoveTo2(Projectile projectile, Vector2 returnPos)
+        //{
+        //    Vector2 playerVec = returnPos - projectile.Center;
+        //    float playerHomeSpeed = 40f;
+        //        playerVec.Normalize();
+        //        playerVec *= playerHomeSpeed;
+        //        projectile.velocity = (projectile.velocity * 10f + playerVec) / 11f;
+        //}
+
+        public static void DoMoveTo3(Projectile projectile, Vector2 dest, float lerpValue = 0.05f)
+        {
+            Vector2 vecToDest = dest - projectile.Center;
+            //vecToDest *= vecToDest.Length() / 12;
+            projectile.velocity = Vector2.Lerp(projectile.velocity, vecToDest, lerpValue);
         }
     }
 
@@ -252,10 +296,11 @@ namespace PetHypnos.Hypnos
 
             //float distanceToTarget = vectorToTarget.Length();
             //follow master or follow mouse
+            Vector2 mouseWorld = Main.player[Projectile.owner].GetModPlayer<PetHypnosPlayer>().mouseWorld;
 
-            if (Main.myPlayer == Projectile.owner && (Main.MouseWorld - Projectile.Center).Length() < 40f && distanceToMaster > 50f)
+            if (Main.myPlayer == Projectile.owner && (mouseWorld - Projectile.Center).Length() < 40f && distanceToMaster > 50f)
             {
-                AIUtils.DoChasePosition(Projectile, Main.MouseWorld, 20f, 40f, 6f, 16f);
+                AIUtils.DoChasePosition(Projectile, mouseWorld, 20f, 40f, 6f, 16f);
 
 
                 if (distanceToMaster > 120f)
@@ -377,6 +422,7 @@ namespace PetHypnos.Hypnos
         public override void AI()
         {
             Player player = Master;
+            PetHypnosPlayer modPlayer = player.GetModPlayer<PetHypnosPlayer>();
             if (player.dead || !player.active)
             {
                 player.ClearBuff(BuffID);
@@ -396,7 +442,6 @@ namespace PetHypnos.Hypnos
             }
 
             Vector2 idlePosition = player.Center;
-            //idlePosition.Y -= 48f;
             Vector2 vectorToIdlePosition = idlePosition - Projectile.Center;
             float distanceToIdlePosition = vectorToIdlePosition.Length();
 
@@ -405,7 +450,7 @@ namespace PetHypnos.Hypnos
                 behavior = HypnosBehavior.Stressed;
             }
 
-            else if (Main.myPlayer == Projectile.owner && ((Main.MouseWorld - player.Center).Length() < 300f && distanceToIdlePosition < 400f))
+            else if (Main.myPlayer == Projectile.owner && ((modPlayer.mouseWorld - player.Center).Length() < 300f && distanceToIdlePosition < 400f))
             {
                 behavior = HypnosBehavior.ChaseMouse;
                 Projectile.netUpdate = true;
@@ -455,7 +500,7 @@ namespace PetHypnos.Hypnos
                     if (Main.myPlayer == Projectile.owner)
                     {
 
-                        AIUtils.DoChasePosition(Projectile, Main.MouseWorld);
+                        AIUtils.DoChasePosition(Projectile, modPlayer.mouseWorld);
                         Projectile.netUpdate = true;
                     }
                     break;
@@ -605,6 +650,7 @@ namespace PetHypnos.Hypnos
         public override void Update(Player player, ref int buffIndex)
         {
             player.buffTime[buffIndex] = 18000;
+            player.GetModPlayer<PetHypnosPlayer>().shouldCheckMouseWorld= true;
             if (player.ownedProjectileCounts[ProjectileTypeID] <= 0 && ((Entity)player).whoAmI == Main.myPlayer)
             {
                 //player.DelBuff(buffIndex);
