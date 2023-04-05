@@ -246,13 +246,7 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             {
                 if (player.ownedProjectileCounts[aergiaNeuronType] > 0)
                 {
-                    foreach (Projectile proj in Main.projectile)
-                    {
-                        if (proj.active && proj.owner == player.whoAmI && proj.type == type)
-                        {
-                            proj.Kill();
-                        }
-                    }
+                    AIUtils.KillAll(player, type);
                     PetHypnosPlayer modPlayer = player.GetModPlayer<PetHypnosPlayer>();
                     Projectile p = Projectile.NewProjectileDirect(source, player.Center, Vector2.Zero, type, damage, knockback, player.whoAmI);
                     modPlayer.currentGhostHypnosIndex = p.whoAmI;
@@ -706,10 +700,9 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             }
             else
             {
-                if (!Projectile.WithinRange(player.Center, 3200f))
+                if (!Projectile.WithinRange(player.Center, 3600f))
                 {
                     Projectile.Center = player.Center;
-                    Projectile.velocity = -Vector2.UnitY * 4f;
                     Projectile.netUpdate = true;
                 }
                 NPC mayTarget = ToyUtils.FindTarget(Projectile, player, 1200f);

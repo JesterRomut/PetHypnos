@@ -17,6 +17,7 @@ mod includes:
 - 宠物的buff介绍每次加载游戏都会变
 - 在宠物00存在时击败boss00掉落的玩具埃吉亚神经元杖（和宠物00的石块一起掉落）
 
+[img] https://jesterromut.github.io/resources/img/Hypnos/toystaff2.gif [/img]
 [img] https://jesterromut.github.io/resources/img/Hypnos/toystaff1.gif [/img]
 
 How to obtain:
