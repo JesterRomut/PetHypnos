@@ -20,7 +20,7 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
 
     public static class ToyUtils
     {
-        public static NPC FindTarget(Projectile projectile, Player player)
+        public static NPC FindTargetCareBuff(Projectile projectile, Player player)
         {
             if (player.HasMinionAttackTargetNPC)
             {
@@ -51,9 +51,35 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
                 return target;
             }
         }
+        public static NPC FindTarget(Projectile projectile, Player player, float sight)
+        {
+            if (player.HasMinionAttackTargetNPC)
+            {
+                return Main.npc[player.MinionAttackTargetNPC];
+            }
+            else
+            {
+                NPC target = null;
+                float targetDist = 800f;
+                foreach (NPC npc in Main.npc)
+                {
+                    if (npc.CanBeChasedBy(projectile, false))
+                    {
+                        float distance = Vector2.Distance(npc.Center, projectile.Center);
+                        if ((distance < targetDist) || target == null)
+                        {
+                            targetDist = distance;
+                            target = npc;
+                        }
+                    }
+                }
+                return target;
+            }
+        }
+
         public static Projectile GetByAergiaIndex(int index, Player player)
         {
-            foreach(Projectile proj in Main.projectile)
+            foreach (Projectile proj in Main.projectile)
             {
                 if (proj.owner == player.whoAmI && proj.type == ModContent.ProjectileType<ToyAergiaNeuronProjectile>() && ((ToyAergiaNeuronProjectile)proj.ModProjectile).AergiaIndex == index)
                 {
@@ -79,6 +105,45 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
                 return 0;
             }
             return index + 1;
+        }
+
+        public static void HitNPCEffect(Projectile proj, NPC target)
+        {
+            target.AddBuff(BuffID.Ichor, 180);
+            target.AddBuff(BuffID.BetsysCurse, 180);
+
+            if (Main.rand.NextBool(3))
+            {
+                Player player = Main.player[proj.owner];
+                player.statMana += 6;
+                player.ManaEffect(6);
+                Dust d = Dust.NewDustDirect(target.position, target.width, target.height, DustID.Electric);
+                d.velocity *= 0.5f;
+            }
+        }
+
+        public static int CalcDamage(NPC target, int minDamage)
+        {
+            return Math.Max((int)Math.Ceiling((double)target.lifeMax / (target.boss ? 12000 : 6)), minDamage);
+        }
+
+        public static Projectile TryGetHypnos(PetHypnosPlayer modPlayer)
+        {
+            Projectile hypnos = Main.projectile.ElementAtOrDefault(modPlayer.currentGhostHypnosIndex);
+            if (hypnos != null && hypnos != default && hypnos.active)
+            {
+                return hypnos;
+            }
+            else
+            {
+                modPlayer.currentGhostHypnosIndex = -1;
+                return null;
+            }
+        }
+
+        public static Projectile TryGetHypnos(Player player)
+        {
+            return TryGetHypnos(player.GetModPlayer<PetHypnosPlayer>());
         }
     }
 
@@ -109,10 +174,10 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
         public override void SetStaticDefaults()
         {
             DisplayName.SetDefault("Toy Aergian Technistaff");
-            Tooltip.SetDefault("Summons a pair of tiny Aergia Neurons\nYou can only have up to 12 tiny Aergia Neurons\nReduce enemy defense\nRight click summons ghost hypnos");
+            Tooltip.SetDefault("Summons a pair of tiny Aergia Neurons\nShoot exo lasers which reduce enemy defense\nRight clicking releases ghost hypnos dealing massive contact damage\n'Remained lingering around the beams for three days, the reverberation was never end.'");
 
             DisplayName.AddTranslation(7, "玩具埃吉亚神经元杖");
-            Tooltip.AddTranslation(7, "召唤一对小埃吉亚神经元\n最多只能拥有十二个神经元\n降低敌人的防御\n右键召唤幽灵修普诺斯");
+            Tooltip.AddTranslation(7, "召唤一对小埃吉亚神经元\n射击能降低敌人防御的星流激光\n右键释放幽灵修普诺斯来造成大量碰撞伤害\n'绕梁三日 余音不绝'");
             ItemID.Sets.GamepadWholeScreenUseRange[Item.type] = true; // This lets the player target anywhere on the whole screen while using a controller.
             ItemID.Sets.LockOnIgnoresCollision[Item.type] = true;
             ItemID.Sets.ItemsThatAllowRepeatedRightClick[base.Item.type] = false;
@@ -149,20 +214,20 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
         }
 
 
-        public override bool CanUseItem(Player player)
-        {
-            return player.ownedProjectileCounts[base.Item.shoot] < 12;
-        }
+        //public override bool CanUseItem(Player player)
+        //{
+        //    return player.ownedProjectileCounts[aergiaNeuronType] < 12;
+        //}
 
         int aergiaNeuronType = ModContent.ProjectileType<ToyAergiaNeuronProjectile>();
         public override bool Shoot(Player player, EntitySource_ItemUse_WithAmmo source, Vector2 position, Vector2 velocity, int type, int damage, float knockback)
         {
-            
+
             if (player.altFunctionUse != 2)
             {
-                if ((float)player.maxMinions - player.slotsMinions >= 1f)
+                if ((float)player.maxMinions - player.slotsMinions >= 1f && player.ownedProjectileCounts[aergiaNeuronType] < 12)
                 {
-                    
+
                     int owned = player.ownedProjectileCounts[aergiaNeuronType];
                     PetHypnosPlayer modPlayer = player.GetModPlayer<PetHypnosPlayer>();
                     for (int i = 0; i < 2; i++)
@@ -179,13 +244,22 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             }
             else
             {
-                if (player.ownedProjectileCounts[type] < 1 && player.ownedProjectileCounts[aergiaNeuronType] > 0)
+                if (player.ownedProjectileCounts[aergiaNeuronType] > 0)
                 {
+                    foreach (Projectile proj in Main.projectile)
+                    {
+                        if (proj.active && proj.owner == player.whoAmI && proj.type == type)
+                        {
+                            proj.Kill();
+                        }
+                    }
                     PetHypnosPlayer modPlayer = player.GetModPlayer<PetHypnosPlayer>();
-                    int p = Projectile.NewProjectile(source, player.Center, Vector2.Zero, type, damage, knockback, player.whoAmI);
-                    modPlayer.currentGhostHypnosIndex = p;
+                    Projectile p = Projectile.NewProjectileDirect(source, player.Center, Vector2.Zero, type, damage, knockback, player.whoAmI);
+                    modPlayer.currentGhostHypnosIndex = p.whoAmI;
+                    p.originalDamage = Item.damage;
                 }
-                
+
+
                 //int p = Projectile.NewProjectile(source, player.Center, Vector2.Zero, ModContent.ProjectileType<ToyGhostHypnosProjectile>(), damage, knockback, player.whoAmI);
             }
 
@@ -245,12 +319,20 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
     public class ToyAergiaNeuronProjectile : BaseAergiaNeuronProjectile
     {
 
-        public bool sticked = false;
+        //public bool sticked = false;
 
         public static readonly Asset<Texture2D> denpaTex = ModContent.Request<Texture2D>("PetHypnos/Hypnos/ToyAergianTechnistaff/DenpaEffect");
 
         public override bool? CanCutTiles() => false;
-        public override bool MinionContactDamage() => false;
+        public override bool MinionContactDamage()
+        {
+            Projectile hypnos = ToyUtils.TryGetHypnos(Main.player[Projectile.owner]);
+            if (hypnos != default)
+            {
+                return ((ToyGhostHypnosProjectile)hypnos.ModProjectile).FullyCharged;
+            }
+            return false;
+        }
         public override void SetStaticDefaults()
         {
             DisplayName.SetDefault("Tiny Aergia Neuron");
@@ -267,6 +349,9 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             Projectile.minion = true;
             Projectile.minionSlots = 0.5f;
             Projectile.scale = 0.8f;
+            Projectile.DamageType = DamageClass.Summon;
+            Projectile.usesLocalNPCImmunity = true;
+            Projectile.localNPCHitCooldown = 1;
         }
 
         public int AergiaIndex => (int)Projectile.ai[0];
@@ -294,7 +379,7 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             //{
             //    Projectile.velocity = (Projectile.velocity * 10f + (dest - Projectile.Center) * 16f) / 21f;
             //}
-            
+
 
             if (shotCooldown > 0)
             {
@@ -304,10 +389,10 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             if (modPlayer.currentGhostHypnosIndex != -1)
             {
                 DoRightClickBehavior(player, modPlayer);
-            }  
+            }
             else
             {
-                
+
                 DoCommonBehavior(player, modPlayer);
             }
 
@@ -319,16 +404,16 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             if (shouldDrawLightning)
             {
                 Player player = Main.player[Projectile.owner];
-                Projectile hypnos = Main.projectile.ElementAtOrDefault(player.GetModPlayer<PetHypnosPlayer>().currentGhostHypnosIndex);
+                Projectile hypnos = ToyUtils.TryGetHypnos(player);//Main.projectile.ElementAtOrDefault(player.GetModPlayer<PetHypnosPlayer>().currentGhostHypnosIndex);
                 if (hypnos != default)
                 {
                     //ToyGhostHypnosProjectile hypnosMod = (ToyGhostHypnosProjectile)hypnos.ModProjectile;
 
-                    Projectile prev = ToyUtils.GetByAergiaIndex(ToyUtils.PrevAergiaIndex(AergiaIndex, player), player);
-                    if (prev != null)
-                    {
-                        DrawLightning(prev.Center);
-                    }
+                    //Projectile prev = ToyUtils.GetByAergiaIndex(ToyUtils.PrevAergiaIndex(AergiaIndex, player), player);
+                    //if (prev != null)
+                    //{
+                    //    DrawLightning(prev.Center);
+                    //}
 
                     Projectile next = ToyUtils.GetByAergiaIndex(ToyUtils.NextAergiaIndex(AergiaIndex, player), player);
                     if (next != null)
@@ -337,40 +422,30 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
                     }
 
                 }
-                
+
             }
-            
+
             return true;
         }
 
         private void DoRightClickBehavior(Player player, PetHypnosPlayer modPlayer)
         {
-            Projectile hypnos = Main.projectile.ElementAtOrDefault(modPlayer.currentGhostHypnosIndex);
+            Projectile hypnos = ToyUtils.TryGetHypnos(modPlayer);//Main.projectile.ElementAtOrDefault(modPlayer.currentGhostHypnosIndex);
             ToyGhostHypnosProjectile hypnosMod = (ToyGhostHypnosProjectile)hypnos.ModProjectile;
 
             float offset = modPlayer.spinOffset * 2 * (float)Math.PI;
             //这玩意转一圈是一个派
             Vector2 dest = ((float)Math.PI * 2f * AergiaIndex / (float)player.ownedProjectileCounts[Type] - hypnos.scale * hypnosMod.time * 0.03f - offset).ToRotationVector2() * 100f + hypnos.Center;
 
-
+            red = true;
+            shouldDrawLightning = false;
             if (hypnosMod.FullyCharged)
             {
-                red = false;
-                if (!hypnosMod.released)
-                {
-                    //Dust d = Dust.NewDustDirect(Projectile.position, Projectile.width, Projectile.height, DustID.Electric);
-                    
-                    shouldDrawLightning= true;
-                }
+                shouldDrawLightning = true;
             }
-            else
-            {
-                red = true;
-                shouldDrawLightning = false;
-            }
-            
-            
-                Vector3 liiight = Color.HotPink.ToVector3() * 1.2f;
+
+
+            Vector3 liiight = Color.HotPink.ToVector3() * 1.2f;
 
             Lighting.AddLight(Projectile.Center, liiight);
 
@@ -378,7 +453,8 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             AIUtils.DoMoveTo3(Projectile, dest, 0.03f);
             //AIUtils.DoReachPosition(Projectile, dest - Projectile.Center, hypnos, hypnos.scale * 100f + 12f, 4f, 16f);
         }
-
+        public static readonly Color lightningColor = new Color(0.3f, 1f, 0.9f);
+        public static readonly Color lightningColorWhite = new Color(0.9f, 1f, 1f);
         private void DrawLightning(Vector2 pluglocation)
         {
             Vector2 distToProj = Projectile.Center;
@@ -386,7 +462,7 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             bool doIDraw = true;
             Texture2D texture = denpaTex.Value;
             float projRotation = Projectile.AngleTo(pluglocation) - 1.57f;
-            Color drawColor = new Color(0f, 1f, 0.9f, 0.5f);
+            
             //int size = 16;
             while (doIDraw)
             {
@@ -399,8 +475,11 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
                 else if (!float.IsNaN(distance))
                 {
                     distToProj += Projectile.DirectionTo(pluglocation) * texture.Height;
+                    float dice = Main.rand.NextFloat() * 2 - 1;
                     //Dust.NewDustPerfect(distToProj, 45, Vector2.Zero);
-                    Main.EntitySpriteDraw(texture, distToProj - Main.screenPosition, (Rectangle?)new Rectangle(0, 0, texture.Width, texture.Height), drawColor, projRotation, texture.Size() / 2f, 1f, (SpriteEffects)0, 0);
+                    Main.EntitySpriteDraw(texture, distToProj - Main.screenPosition + (projRotation).ToRotationVector2() * (dice), (Rectangle?)new Rectangle(0, 0, texture.Width, texture.Height), lightningColorWhite, projRotation, texture.Size() / 2f, 1.5f, (SpriteEffects)0, 0);
+                    Main.EntitySpriteDraw(texture, distToProj - Main.screenPosition + (projRotation).ToRotationVector2() * (dice), (Rectangle?)new Rectangle(0, 0, texture.Width, texture.Height), lightningColor, projRotation, texture.Size() / 2f, 1f, (SpriteEffects)0, 0);
+                    
                 }
                 else
                 {
@@ -424,7 +503,7 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
 
             if (shotCooldown == 0)
             {
-                NPC mayTarget = ToyUtils.FindTarget(Projectile, player);
+                NPC mayTarget = ToyUtils.FindTargetCareBuff(Projectile, player);
                 if (mayTarget != null)
                 {
                     TryAttackNPC(mayTarget);
@@ -454,7 +533,7 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             //AIUtils.DoReachPosition(Projectile, dest - Projectile.Center, player, 40f, 10f, 16f);
         }
 
-        
+
 
         private void TryAttackNPC(NPC target)
         {
@@ -477,6 +556,17 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
                 Projectile.netUpdate = true;
             }
         }
+
+        public override void ModifyHitNPC(NPC target, ref int damage, ref float knockback, ref bool crit, ref int hitDirection)
+        {
+            crit = true;
+            damage = ToyUtils.CalcDamage(target, damage * 10);
+        }
+
+        //public override void OnHitNPC(NPC target, int damage, float knockback, bool crit)
+        //{
+        //    ToyUtils.HitNPCEffect(Projectile, target);
+        //}
     }
 
     public class ToyGhostHypnosProjectile : ModProjectile
@@ -534,16 +624,19 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             Projectile.scale = 0.7f;
             Projectile.minion = true;
             Projectile.timeLeft = 300;
+            base.Projectile.minionSlots = 0f;
             Projectile.scale = 0.01f;
             Projectile.usesLocalNPCImmunity = true;
             Projectile.localNPCHitCooldown = 1;
+            Projectile.DamageType = DamageClass.Summon;
+
         }
 
         public override void AI()
         {
             Projectile.rotation = Projectile.velocity.X * 0.05f;
 
-            
+
             frameInterval++;
             if (frameInterval >= frameSpeed)
             {
@@ -569,12 +662,16 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
                 Projectile.scale += 0.003f;
             }
 
-            
+            if (!Projectile.active)
+            {
+                Projectile.Kill();
+            }
+
 
             Player player = Main.player[Projectile.owner];
             PetHypnosPlayer modPlayer = player.GetModPlayer<PetHypnosPlayer>();
 
-            
+
 
 
             if (!released)
@@ -599,7 +696,7 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
                     }
                     else
                     {
-                        
+
                         Projectile.Kill();
                     }
                 }
@@ -609,12 +706,13 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             }
             else
             {
-                if (!Projectile.WithinRange(player.Center, 2000f))
+                if (!Projectile.WithinRange(player.Center, 3200f))
                 {
-                    Projectile.Kill();
+                    Projectile.Center = player.Center;
+                    Projectile.velocity = -Vector2.UnitY * 4f;
+                    Projectile.netUpdate = true;
                 }
-                
-                NPC mayTarget = ToyUtils.FindTarget(Projectile, player);
+                NPC mayTarget = ToyUtils.FindTarget(Projectile, player, 1200f);
                 if (mayTarget != null)
                 {
                     Projectile.timeLeft = 60;
@@ -627,7 +725,7 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
                 }
             }
 
-            
+
 
             AdjustPlayerValues();
             time++;
@@ -635,9 +733,9 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
 
         private void TryAttackNPC(NPC target)
         {
-            //AIUtils.DoChasePosition(Projectile, target.Center, 33, 10, 20, 10);
-            float flySpeed = 40f / (float)base.Projectile.MaxUpdates;
-            base.Projectile.velocity = Vector2.Lerp(base.Projectile.velocity, (target.Center - Projectile.Center).SafeNormalize(default) * flySpeed, 0.02f);
+            AIUtils.DoChasePosition(Projectile, target.Center, 40, 10, 33, 10);
+            //float flySpeed = 40f / (float)base.Projectile.MaxUpdates;
+            //base.Projectile.velocity = Vector2.Lerp(base.Projectile.velocity, (target.Center - Projectile.Center).SafeNormalize(default) * flySpeed, 0.02f);
             //float angularOffsetToTarget = MathHelper.WrapAngle(Projectile.AngleTo(target.Center) - Projectile.velocity.ToRotation()) * 0.1f;
             //Projectile.velocity = Projectile.velocity.RotatedBy(angularOffsetToTarget);
         }
@@ -645,7 +743,6 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
         public override void Kill(int timeLeft)
         {
             Main.player[Projectile.owner].GetModPlayer<PetHypnosPlayer>().currentGhostHypnosIndex = -1;
-            base.Kill(timeLeft);
         }
 
         public override void SendExtraAI(BinaryWriter writer)
@@ -660,24 +757,28 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
 
         public void AdjustPlayerValues()
         {
-            
+
             if (!released)
             {
                 Player player = Main.player[Projectile.owner];
                 base.Projectile.spriteDirection = (base.Projectile.direction = player.direction);
                 player.heldProj = base.Projectile.whoAmI;
-            player.itemTime = 2;
-            player.itemAnimation = 2;
+                player.itemTime = 2;
+                player.itemAnimation = 2;
             }
-            
+
         }
 
-        public override void OnHitNPC(NPC target, int damage, float knockback, bool crit)
+        public override void ModifyHitNPC(NPC target, ref int damage, ref float knockback, ref bool crit, ref int hitDirection)
         {
-            target.AddBuff(BuffID.Ichor, 180);
-            target.AddBuff(BuffID.BetsysCurse, 180);
-
+            crit = true;
+            damage = ToyUtils.CalcDamage(target, damage * 10);
         }
+
+        //public override void OnHitNPC(NPC target, int damage, float knockback, bool crit)
+        //{
+        //    ToyUtils.HitNPCEffect(Projectile, target);
+        //}
     }
 
     public class ToyAergiaNeuronBlueExoPulse : ModProjectile
@@ -691,6 +792,8 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             DisplayName.SetDefault("Blue Exo Pulse Laser");
             DisplayName.AddTranslation(7, "蓝色星流脉冲激光");
             Main.projFrames[Projectile.type] = 4;
+            ProjectileID.Sets.TrailCacheLength[base.Projectile.type] = 4;
+            ProjectileID.Sets.TrailingMode[base.Projectile.type] = 0;
         }
 
         public override void SetDefaults()
@@ -707,6 +810,9 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             Projectile.usesLocalNPCImmunity = true;
             Projectile.localNPCHitCooldown = 1;
             //Projectile.ArmorPenetration = 666;
+            Projectile.DamageType = DamageClass.Summon;
+            base.Projectile.minion = true;
+            base.Projectile.minionSlots = 0f;
         }
 
         public override void AI()
@@ -758,19 +864,14 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             }
         }
 
+        //public override void ModifyHitNPC(NPC target, ref int damage, ref float knockback, ref bool crit, ref int hitDirection)
+        //{
+        //    crit = true;
+        //}
+
         public override void OnHitNPC(NPC target, int damage, float knockback, bool crit)
         {
-            target.AddBuff(BuffID.Ichor, 180);
-            target.AddBuff(BuffID.BetsysCurse, 180);
-
-            if (Main.rand.NextBool(3))
-            {
-                Player player = Main.player[Projectile.owner];
-                player.statMana += 6;
-                player.ManaEffect(6);
-                Dust d = Dust.NewDustDirect(target.position, target.width, target.height, DustID.Electric);
-                d.velocity *= 0.5f;
-            }
+            ToyUtils.HitNPCEffect(Projectile, target);
 
             Projectile.Kill();
         }
