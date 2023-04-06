@@ -10,6 +10,7 @@ using PetHypnos.Hypnos;
 using Terraria.GameInput;
 using static Humanizer.In;
 using System.IO;
+using System.Collections.Generic;
 
 namespace PetHypnos
 {
@@ -231,4 +232,47 @@ namespace PetHypnos
         }
     }
 
+    public static class PetHypnosQuote
+    {
+        public static HashSet<string> buffTooltip = new HashSet<string>() {
+            "Tiny Hypnos' assault on Thanatos keep", //小修普诺斯强袭塔纳堡
+            "The day you went away",
+            "Oh haiiii!",
+            "Hypnos brings forth innumerable things to nurture man", //修普诺斯生万物以养人
+            "From the great above to the great below", //从伟大的天到伟大的地
+            "When the flying birds are done with, the good bow is stored away; when the sly rabbit dies, the hunting dog is boiled.", //飞鸟尽，良弓藏；狡兔死，走狗烹
+            "There must be something strange about things going wrong", //事出反常必有妖
+            "Player suki suki daisuki", //普雷尔 suki suki daisuki
+            "It sexually identifies as an attack ornithopter", //它的性别认知是武装扑翼机
+            "I think therefore I am", //我思故我在
+            "History repeats itself", //历史总是惊人的相似
+            "The Next Generation", //下一代
+            "Aleph-0",
+            "HypnOS v5.64 Code:Vaporwave",
+            "Do android brain dream of electric serpent?", //仿生大脑会梦到电子长直吗？
+            "Already dyed itself", //已经染过色了
+            "Then the fifth angel sounded his trumpet", //第五位天使吹号
+            "Libet's delay",
+            "42"
+        };
+        //public static HashSet<string> toystaffAttack = new HashSet<string>()
+        //{
+        //    "Ladies✰ and gentlemen.",
+        //    "Let's start.",
+        //    "Close your eyes.",
+        //    "Tonight.",
+        //    "Mahoshojo✰ ikuzo!",
+        //    "Suki suki daisuki✰",
+        //    "Daisuke✰",
+        //    "SOMEBODY'S SCREEEEAM!",
+        //    "BURN ALL THE BABIES!!!!!",
+        //    "Yo.",
+        //    "Kill. Kill. Kill. Kill. Kill. Kill. Kill.",
+        //    "My pretty pretty boy✰",
+        //    "Ring-a-round the roses.",
+        //    "Ashes✰ Ashes✰ You. Down.",
+        //    "Divano messia.",
+        //    "Blessed are the dead who die in the Lord from now on!"
+        //};
+    }
 }

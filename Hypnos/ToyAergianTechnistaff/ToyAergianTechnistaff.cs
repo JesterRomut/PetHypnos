@@ -60,12 +60,12 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             else
             {
                 NPC target = null;
-                float targetDist = 800f;
+                float targetDist = sight;
                 foreach (NPC npc in Main.npc)
                 {
                     if (npc.CanBeChasedBy(projectile, false))
                     {
-                        float distance = Vector2.Distance(npc.Center, projectile.Center);
+                        float distance = Vector2.Distance(npc.Center, player.Center);
                         if ((distance < targetDist) || target == null)
                         {
                             targetDist = distance;
@@ -81,7 +81,7 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
         {
             foreach (Projectile proj in Main.projectile)
             {
-                if (proj.owner == player.whoAmI && proj.type == ModContent.ProjectileType<ToyAergiaNeuronProjectile>() && ((ToyAergiaNeuronProjectile)proj.ModProjectile).AergiaIndex == index)
+                if (proj.active && proj.owner == player.whoAmI && proj.type == ModContent.ProjectileType<ToyAergiaNeuronProjectile>() && ((ToyAergiaNeuronProjectile)proj.ModProjectile).AergiaIndex == index)
                 {
                     return proj;
                 }
@@ -124,7 +124,7 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
 
         public static int CalcDamage(NPC target, int minDamage)
         {
-            return Math.Max((int)Math.Ceiling((double)target.lifeMax / (target.boss ? 12000 : 6)), minDamage);
+            return (int)Math.Max(Math.Min(int.MaxValue / 2, (float)target.lifeMax / (target.boss ? 14000 : 6)), minDamage);
         }
 
         public static Projectile TryGetHypnos(PetHypnosPlayer modPlayer)
@@ -432,10 +432,22 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             Vector2 dest = ((float)Math.PI * 2f * AergiaIndex / (float)player.ownedProjectileCounts[Type] - hypnos.scale * hypnosMod.time * 0.03f - offset).ToRotationVector2() * 100f + hypnos.Center;
 
             red = true;
-            shouldDrawLightning = false;
+            
             if (hypnosMod.FullyCharged)
             {
+                if (shouldDrawLightning == false)
+                {
+                    for(int i = 0; i < 3;i++)
+                    {
+                        Dust.NewDust(Projectile.position, Projectile.width, Projectile.height, DustID.Electric);
+                    }
+                    
+                }
                 shouldDrawLightning = true;
+            }
+            else
+            {
+                shouldDrawLightning = false;
             }
 
 
@@ -631,6 +643,7 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             Projectile.rotation = Projectile.velocity.X * 0.05f;
 
 
+
             frameInterval++;
             if (frameInterval >= frameSpeed)
             {
@@ -665,7 +678,10 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             Player player = Main.player[Projectile.owner];
             PetHypnosPlayer modPlayer = player.GetModPlayer<PetHypnosPlayer>();
 
-
+            if (!player.HasBuff(ModContent.BuffType<ToyAergianTechnistaffBuff>()))
+            {
+                Projectile.Kill();
+            }
 
 
             if (!released)
@@ -680,6 +696,8 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
 
                     if (FullyCharged)
                     {
+                        //Rectangle displayZone = Projectile.Hitbox;
+                        //CombatText.NewText(displayZone, new Color(155, 255, 255), PetHypnosQuote.toystaffAttack.RandomElement(), dramatic: false);
                         if (Main.myPlayer == base.Projectile.owner)
                         {
                             base.Projectile.velocity = (modPlayer.mouseWorld - Projectile.Center).SafeNormalize(default) * 33f;
@@ -700,7 +718,7 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             }
             else
             {
-                if (!Projectile.WithinRange(player.Center, 3600f))
+                if (!Projectile.WithinRange(player.Center, 4000f))
                 {
                     Projectile.Center = player.Center;
                     Projectile.netUpdate = true;
