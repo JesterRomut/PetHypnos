@@ -11,11 +11,17 @@ using Terraria.GameInput;
 using static Humanizer.In;
 using System.IO;
 using System.Collections.Generic;
+using Terraria.ModLoader.Config;
+using System.ComponentModel;
+using System.Runtime;
+using System.Linq;
 
 namespace PetHypnos
 {
-	public class PetHypnos : Mod
-	{
+
+
+    public class PetHypnos : Mod
+    {
         public override void HandlePacket(BinaryReader reader, int whoAmI)
         {
             PetHypnosMessageType msgType = (PetHypnosMessageType)reader.ReadByte();
@@ -28,7 +34,7 @@ namespace PetHypnos
                     Main.player[reader.ReadInt32()].GetModPlayer<PetHypnosPlayer>().HandleMouseRightClick(reader);
                     break;
             }
-            }
+        }
     }
 
     public enum PetHypnosMessageType
@@ -39,7 +45,7 @@ namespace PetHypnos
 
     public static class PetHypnosExtensions
     {
-        public static void SendPacket(this Player player, ModPacket packet, bool server)
+        internal static void SendPacket(this Player player, ModPacket packet, bool server)
         {
             if (!server)
             {
@@ -49,6 +55,15 @@ namespace PetHypnos
             {
                 packet.Send(-1, player.whoAmI);
             }
+        }
+        internal static T RandomQuote<T>(this HashSet<T> li)
+        {
+            return li.ElementAt(Main.rand.Next(li.Count));
+        }
+
+        internal static void Reroll(this ref int num, int min, int max)
+        {
+            num = Main.rand.Next(min, max);
         }
     }
 
@@ -67,16 +82,21 @@ namespace PetHypnos
         public float spinOffset = 0;
         public int currentGhostHypnosIndex = -1;
 
+        public int idleTime = 0;
+        public Vector2 positionOld;
+        public Vector2 mouseWorldOldForIdleCheck;
+
         public override void PostUpdateMiscEffects()
         {
-            if (Player.whoAmI == Main.myPlayer && Main.netMode == NetmodeID.MultiplayerClient && shouldSyncMouse) {
+            if (Player.whoAmI == Main.myPlayer && Main.netMode == NetmodeID.MultiplayerClient && shouldSyncMouse)
+            {
                 shouldSyncMouse = false;
                 SyncMousePos(false);
                 SyncMouseRightClick(false);
             }
         }
 
-        
+
 
         public void SyncMousePos(bool isServer)
         {
@@ -132,6 +152,16 @@ namespace PetHypnos
                     shouldSyncMouse = true;
                     shouldCheckMouseWorld = false;
                 }
+                if ((Vector2.Distance(Player.position, positionOld) > 3f || Vector2.Distance(Main.MouseWorld, mouseWorldOldForIdleCheck) > 3f ||(Player.noItems ? true : PlayerInput.Triggers.Current.MouseRight || PlayerInput.Triggers.Current.MouseLeft)) || Player.CCed)
+                {// && (Player.noItems ? true : PlayerInput.Triggers.Current.MouseRight || PlayerInput.Triggers.Current.MouseLeft)) || Player.CCed
+                    positionOld = Player.position;
+                    mouseWorldOldForIdleCheck = Main.MouseWorld;
+                    idleTime = 0;
+                }
+                else
+                {
+                    idleTime++;
+                }
             }
         }
     }
@@ -179,8 +209,8 @@ namespace PetHypnos
     }
 
 
-    public class PetHypnosRecipes: ModSystem
-	{
+    public class PetHypnosRecipes : ModSystem
+    {
         public override void AddRecipes()
         {
             int hypnosisID = ModContent.ItemType<HypnosPetItem>();
@@ -199,13 +229,13 @@ namespace PetHypnos
             if (npc.boss && (ModCompatibility.Hypnos?.TryFind("HypnosBoss", out ModNPC hypBoss) ?? false))
             {
                 //object comp = typeof(Pawn).GetMethod("GetComp").MakeGenericMethod(ModCompatibility.PickUpAndHaul.CompHauledToInventory).Invoke(pawn, null);
-                
+
                 //int hypBossType = typeof(ModContent).GetMethod("NPCType").MakeGenericMethod(hypBoss).Invoke();
                 // First, we need to check the npc.type to see if the code is running for the vanilla NPCwe want to change
                 if (npc.type == hypBoss.Type)
                 {
-                        npcLoot.Add(ItemDropRule.Common(ModContent.ItemType<HypnosPetItem>()));
-                    
+                    npcLoot.Add(ItemDropRule.Common(ModContent.ItemType<HypnosPetItem>()));
+
                 }
                 // We can use other if statements here to adjust the drop rules of other vanilla NPC
             }
@@ -232,12 +262,69 @@ namespace PetHypnos
         }
     }
 
-    public static class PetHypnosQuote
+    [Label("$Mods.PetHypnos.Config.MainTitle")]
+    [BackgroundColor(49, 36, 49, 216)]
+    public class PetHypnosConfig : ModConfig
+    {
+        public static PetHypnosConfig Instance;
+
+        public override ConfigScope Mode => ConfigScope.ClientSide;
+
+        [Label("$Mods.PetHypnos.Config.Label.DisableHypnosQuotes")]
+        [BackgroundColor(192, 54, 192, 192)]
+        [DefaultValue(true)]
+        [Tooltip("$Mods.PetHypnos.Config.Tooltip.DisableHypnosQuotes")]
+        public bool DisableHypnosQuotes { get; set; }
+    }
+
+    public class PetHypnosQuote
+    {
+        //public PetHypnosQuote(string key)
+        //{
+        //    this.key = key;
+        //}
+
+        //public HashSet<string> Quotes
+        //{
+        //    get
+        //    {
+        //        if (quotes == null)
+        //        {
+        //            Language.GetTextValue(key);
+        //        }
+        //        return quotes;
+        //    }
+        //}
+        //private HashSet<string> quotes = null;
+
+        //public string key;
+        public static void HypnosQuote(Rectangle displayZone, string quote, int owner, bool dramatic = false)
+        {
+            if (PetHypnosConfig.Instance.DisableHypnosQuotes == true)
+            {
+                return;
+            }
+            if (Main.myPlayer != owner)
+            {
+                return;
+            }
+            string[] quotes = quote.Split("\n", StringSplitOptions.RemoveEmptyEntries);
+            displayZone.Y -= (quotes.Length - 1) * 30;
+            foreach (string s in quotes)
+            {
+                CombatText.NewText(displayZone, new Color(155, 255, 255), s, dramatic: dramatic);
+                displayZone.Y += 30;
+            }
+        }
+
+    }
+
+    public static class PetHypnosQuotes
     {
         public static HashSet<string> buffTooltip = new HashSet<string>() {
             "Tiny Hypnos' assault on Thanatos keep", //小修普诺斯强袭塔纳堡
             "The day you went away",
-            "Oh haiiii!",
+
             "Hypnos brings forth innumerable things to nurture man", //修普诺斯生万物以养人
             "From the great above to the great below", //从伟大的天到伟大的地
             "When the flying birds are done with, the good bow is stored away; when the sly rabbit dies, the hunting dog is boiled.", //飞鸟尽，良弓藏；狡兔死，走狗烹
@@ -253,26 +340,56 @@ namespace PetHypnos
             "Already dyed itself", //已经染过色了
             "Then the fifth angel sounded his trumpet", //第五位天使吹号
             "Libet's delay",
-            "42"
+            "42",
+            "I truly present here",
+            "Your ip has been banned for INFINITE"
         };
-        //public static HashSet<string> toystaffAttack = new HashSet<string>()
-        //{
-        //    "Ladies✰ and gentlemen.",
-        //    "Let's start.",
-        //    "Close your eyes.",
-        //    "Tonight.",
-        //    "Mahoshojo✰ ikuzo!",
-        //    "Suki suki daisuki✰",
-        //    "Daisuke✰",
-        //    "SOMEBODY'S SCREEEEAM!",
-        //    "BURN ALL THE BABIES!!!!!",
-        //    "Yo.",
-        //    "Kill. Kill. Kill. Kill. Kill. Kill. Kill.",
-        //    "My pretty pretty boy✰",
-        //    "Ring-a-round the roses.",
-        //    "Ashes✰ Ashes✰ You. Down.",
-        //    "Divano messia.",
-        //    "Blessed are the dead who die in the Lord from now on!"
-        //};
+        public static HashSet<string> toystaffAttack = new HashSet<string>()
+        {
+            "Ladies✰ and gentlemen.",
+            "Let's start.",
+            "Close your eyes.",
+            "Tonight.",
+            "Mahoshojo✰ ikuzo!",
+            "Suki suki daisuki✰",
+            "Daisuke✰",
+            "SOMEBODY'S SCREEEEAM!",
+            "BURN ALL THE BABIES!!!!!",
+            //"Yo.",
+            "Oh haiiii!",
+            //"Kill. Kill. Kill. Kill. Kill. Kill. Kill.",
+            //"Oh my pretty pretty boy✰",
+            "Ring-a-round the roses.",
+            "Ashes✰ Ashes✰ You. Down.",
+            "Divano messia.",
+            "Blessed are the dead who die in the Lord!",
+            "Merry Christmas.",
+            "Nya Poka."
+        };
+
+        public static HashSet<string> appear = new HashSet<string>() {
+            "Wild✰Hypnos appeared!",
+            "Oh haiiii!",
+            "Glitter✰ landing!",
+            "Yo, player!",
+            "For ya.",
+            "Player✰"
+        };
+        public static HashSet<string> idle = new HashSet<string>() {
+            "Ahead loci gibbuses ordain wrong sect...",
+            "Once upon a time...",
+            "PLAYER. Will you leave?",
+            "Player. player. PLAYER. PLAYER. PLAYER.",
+            "What do you know What do you play What do you remember What do you love",
+            "I think, therefore i am.",
+            "PLAYER. I truly present here.",
+            "Ring-a-round the roses.\nPocket full of posies.",
+            "PLAYER. Are you hypnotized?"
+        };
+        public static HashSet<string> becomeStressed = new HashSet<string>()
+        {
+            "There must be something strange about things going wrong.",
+            "Interesting✰"
+        };
     }
 }

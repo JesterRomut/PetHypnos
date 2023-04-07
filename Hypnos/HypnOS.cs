@@ -129,10 +129,7 @@ namespace PetHypnos.Hypnos
             }
         }
 
-        internal static T RandomElement<T>(this HashSet<T> li)
-        {
-            return li.ElementAt(Main.rand.Next(li.Count));
-        }
+        
 
         //public static Vector2 MoveTo(Vector2 currentPosition, Vector2 targetPosition, float maxAmountToMove)
         //{
@@ -357,7 +354,30 @@ namespace PetHypnos.Hypnos
 
     }
 
+    //internal class RollableInt
+    //{
+    //    public int min;
+    //    public int max;
+    //    public RollableInt(int min, int max, int defaultValue) {
+    //        this.min = min;
+    //        this.max = max;
+    //        this.value= defaultValue;
+    //    }
 
+    //    public int Value
+    //    {
+    //        get
+    //        {
+    //            return value;
+    //        }
+    //    }
+    //    private int value;
+
+    //    public void Reroll()
+    //    {
+    //        value = Main.rand.Next(min, max);
+    //    }
+    //}
 
     public abstract class BaseHypnosPetProjectile : ModProjectile
     {
@@ -368,6 +388,8 @@ namespace PetHypnos.Hypnos
         public bool flipped = false;
         public bool initialized = false;
         public int portalTick = 120;
+        public int idleQuoteCooldown = 0;
+        private int desiredIdleTime = -1;
 
         public override string Texture => "PetHypnos/Hypnos/HypnosPetProjectile";
 
@@ -441,6 +463,9 @@ namespace PetHypnos.Hypnos
                 Main.dust[num6].velocity = Projectile.velocity * 0.1f;
                 Main.dust[num6].velocity = Vector2.Normalize(RCenter - Projectile.velocity * 3f - Main.dust[num6].position) * 1.25f;
             }
+
+            PetHypnosQuote.HypnosQuote(Projectile.Hitbox, PetHypnosQuotes.appear.RandomQuote(), Projectile.owner);
+
             SoundEngine.PlaySound(in calFlareSound, Projectile.Center);
 
             initialized = true;
@@ -531,8 +556,7 @@ namespace PetHypnos.Hypnos
                         targetPos.Y -= 100f;
 
                         AIUtils.DoChasePosition(Projectile, targetPos);
-
-
+                        TryDoIdleQuote(modPlayer);
 
                         break;
                     case HypnosBehavior.ChaseMouse:
@@ -542,6 +566,7 @@ namespace PetHypnos.Hypnos
                             AIUtils.DoChasePosition(Projectile, modPlayer.mouseWorld);
                             Projectile.netUpdate = true;
                         }
+                        TryDoIdleQuote(modPlayer);
                         break;
                     case HypnosBehavior.Stressed:
                         if (Main.myPlayer == player.whoAmI && distanceToIdlePosition > 2000f)
@@ -555,6 +580,12 @@ namespace PetHypnos.Hypnos
                         break;
                 }
 
+                //CombatText.NewText(Projectile.Hitbox, Color.White, String.Concat(modPlayer.idleTime));
+
+                if (idleQuoteCooldown > 0)
+                {
+                    idleQuoteCooldown--;
+                }
 
 
                 Projectile.rotation = Projectile.velocity.X * 0.05f;
@@ -593,6 +624,24 @@ namespace PetHypnos.Hypnos
 
 
             //Lighting.AddLight(Projectile.Center, Color.White.ToVector3() * 0.78f);
+        }
+
+        private void TryDoIdleQuote(PetHypnosPlayer modPlayer)
+        {
+            if (idleQuoteCooldown > 0) {
+                return;
+            }
+            if (desiredIdleTime < 0)
+            {
+                desiredIdleTime.Reroll(1200, 1600);
+            }
+            if (modPlayer.idleTime > desiredIdleTime)
+            {
+                PetHypnosQuote.HypnosQuote(Projectile.Hitbox, PetHypnosQuotes.idle.RandomQuote(), Projectile.owner, false);
+                idleQuoteCooldown.Reroll(3200, 5200);
+                desiredIdleTime.Reroll(1200, 1600);
+            }
+            
         }
 
         public void TeleportTo(Vector2 pos)
@@ -682,7 +731,7 @@ namespace PetHypnos.Hypnos
 
     public abstract class BaseHypnosPetBuff : ModBuff
     {
-        public static HashSet<string> bible => PetHypnosQuote.buffTooltip;
+        public static HashSet<string> bible => PetHypnosQuotes.buffTooltip;
 
         public string Curren
         {
@@ -690,7 +739,7 @@ namespace PetHypnos.Hypnos
             {
                 if (curren == null)
                 {
-                    curren = bible.RandomElement();
+                    curren = bible.RandomQuote();
                 }
                 return curren;
             }

@@ -145,6 +145,8 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
         {
             return TryGetHypnos(player.GetModPlayer<PetHypnosPlayer>());
         }
+
+        
     }
 
     public class ToyAergianTechnistaff : ModItem
@@ -696,8 +698,7 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
 
                     if (FullyCharged)
                     {
-                        //Rectangle displayZone = Projectile.Hitbox;
-                        //CombatText.NewText(displayZone, new Color(155, 255, 255), PetHypnosQuote.toystaffAttack.RandomElement(), dramatic: false);
+                        PetHypnosQuote.HypnosQuote(Projectile.Hitbox, PetHypnosQuotes.toystaffAttack.RandomQuote(), Projectile.owner);
                         if (Main.myPlayer == base.Projectile.owner)
                         {
                             base.Projectile.velocity = (modPlayer.mouseWorld - Projectile.Center).SafeNormalize(default) * 33f;

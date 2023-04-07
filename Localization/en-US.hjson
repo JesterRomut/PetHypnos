@@ -1,0 +1,13 @@
+Mods: {
+	PetHypnos: {
+		Config: {
+			MainTitle: "Config",
+			Label: {
+				DisableHypnosQuotes: "Mute Hypnos"
+			}
+			Tooltip: {
+				DisableHypnosQuotes: "Enable this to prevent hypnos from annoying you."
+			}
+		}
+	}
+}
