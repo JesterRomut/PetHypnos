@@ -14,3 +14,4 @@ a fan art mod of a mod of a mod
 我生不为逐鹿来，都门懒筑黄金台， 状元百官都如狗，总是刀下觳觫材。 传令麾下四王子，破城不须封刀匕。 山头代天树此碑，逆天之人立死跪亦死!
 
 ![vaporwave.png](https://jesterromut.github.io/resources/img/Hypnos/myHypnos1.png)
+![彁.png](https://jesterromut.github.io/resources/img/Hypnos/MyHypnos4.png)
