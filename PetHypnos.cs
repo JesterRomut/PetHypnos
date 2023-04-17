@@ -1,20 +1,19 @@
-﻿using Terraria.ModLoader;
-using Terraria.GameContent.ItemDropRules;
-using ReLogic;
-using Terraria;
-using Terraria.ID;
-using log4net;
-using System;
-using Microsoft.Xna.Framework;
-using PetHypnos.Hypnos;
-using Terraria.GameInput;
-using static Humanizer.In;
-using System.IO;
+﻿using System;
 using System.Collections.Generic;
-using Terraria.ModLoader.Config;
 using System.ComponentModel;
-using System.Runtime;
+using System.IO;
 using System.Linq;
+using System.Reflection;
+using log4net.Repository.Hierarchy;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
+using PetHypnos.Hypnos;
+using Terraria;
+using Terraria.GameContent.ItemDropRules;
+using Terraria.GameInput;
+using Terraria.ID;
+using Terraria.ModLoader;
+using Terraria.ModLoader.Config;
 
 namespace PetHypnos
 {
@@ -35,6 +34,15 @@ namespace PetHypnos
                     break;
             }
         }
+
+        public override void PostSetupContent()
+        {
+            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                Logger.Info(assembly.GetName().Name);
+            }
+        }
+
     }
 
     public enum PetHypnosMessageType
@@ -65,6 +73,11 @@ namespace PetHypnos
         {
             num = Main.rand.Next(min, max);
         }
+
+        internal static IEnumerable<Assembly> GetAssemblyByName(this AppDomain domain, string name)
+        {
+            return domain.GetAssemblies().Where(assembly => assembly.GetName().Name == name);
+        }
     }
 
     public class PetHypnosPlayer : ModPlayer
@@ -81,6 +94,8 @@ namespace PetHypnos
 
         public float spinOffset = 0;
         public int currentGhostHypnosIndex = -1;
+        public int desiredNeurons = 0;
+        public Item technistaff = null;
 
         public int idleTime = 0;
         public Vector2 positionOld;
@@ -152,7 +167,7 @@ namespace PetHypnos
                     shouldSyncMouse = true;
                     shouldCheckMouseWorld = false;
                 }
-                if ((Vector2.Distance(Player.position, positionOld) > 3f || Vector2.Distance(Main.MouseWorld, mouseWorldOldForIdleCheck) > 3f ||(Player.noItems ? true : PlayerInput.Triggers.Current.MouseRight || PlayerInput.Triggers.Current.MouseLeft)) || Player.CCed)
+                if ((Vector2.Distance(Player.position, positionOld) > 3f || Vector2.Distance(Main.MouseWorld, mouseWorldOldForIdleCheck) > 3f || (Player.noItems ? true : PlayerInput.Triggers.Current.MouseRight || PlayerInput.Triggers.Current.MouseLeft)) || Player.CCed)
                 {// && (Player.noItems ? true : PlayerInput.Triggers.Current.MouseRight || PlayerInput.Triggers.Current.MouseLeft)) || Player.CCed
                     positionOld = Player.position;
                     mouseWorldOldForIdleCheck = Main.MouseWorld;
@@ -206,8 +221,66 @@ namespace PetHypnos
             }
         }
         private static Mod hypnos;
+
+        //public static Dictionary<string, Type> modCompatibilityTypes = new Dictionary<string, Type>()
+        //{
+        //    {"BloomRing", null},
+        //    {"ThisShouldNotExistReallyyyyyyy", null}
+        //};
+        
     }
 
+    public class ModCompatibilityType
+    {
+        public Type Type
+        {
+            get
+            {
+                if(type== null)
+                {
+                    type = Assemblies.LastOrDefault()?.GetType(typeName);
+                    
+                }
+                return type;
+            }
+        }
+        private Type type = null;
+        public string typeName;
+
+        public IEnumerable<Assembly> Assemblies
+        {
+            get
+            {
+                return AppDomain.CurrentDomain.GetAssemblyByName(assemblyName);
+            }
+        }
+
+        public string assemblyName;
+        public bool IsNull
+        {
+            get
+            {
+                return Type == null;
+            }
+        }
+        public ModCompatibilityType(string typeName, string assemblyName)
+        {
+            this.typeName = typeName;
+            this.assemblyName = assemblyName;
+        }
+    }
+
+    public static class ModCompatibilityTypes
+    {
+        public static readonly string calamityAssemblyName = "CalamityMod";
+
+        public static ModCompatibilityType CommonCalamitySounds = new ModCompatibilityType("CalamityMod.Sounds.CommonCalamitySounds", calamityAssemblyName);
+
+        public static ModCompatibilityType Particle = new ModCompatibilityType("CalamityMod.Particles.Particle", calamityAssemblyName);
+        public static ModCompatibilityType BloomRing = new ModCompatibilityType("CalamityMod.Particles.BloomRing", calamityAssemblyName);
+        public static ModCompatibilityType StrongBloom = new ModCompatibilityType("CalamityMod.Particles.StrongBloom", calamityAssemblyName);
+        public static ModCompatibilityType GeneralParticleHandler = new ModCompatibilityType("CalamityMod.Particles.GeneralParticleHandler", calamityAssemblyName);
+    }
 
     public class PetHypnosRecipes : ModSystem
     {
@@ -342,7 +415,9 @@ namespace PetHypnos
             "Libet's delay",
             "42",
             "I truly present here",
-            "Your ip has been banned for INFINITE"
+            "Your ip has been banned for INFINITE",
+            "Your best cutter",
+            "What is this? An amnesia spray? Try it."
         };
         public static HashSet<string> toystaffAttack = new HashSet<string>()
         {
@@ -364,7 +439,8 @@ namespace PetHypnos
             "Divano messia.",
             "Blessed are the dead who die in the Lord!",
             "Merry Christmas.",
-            "Nya Poka."
+            "Nya Poka.",
+            "Your best cutter✰"
         };
 
         public static HashSet<string> appear = new HashSet<string>() {
@@ -373,7 +449,8 @@ namespace PetHypnos
             "Glitter✰ landing!",
             "Yo, player!",
             "For ya.",
-            "Player✰"
+            "Player✰",
+            "More cutter."
         };
         public static HashSet<string> idle = new HashSet<string>() {
             "Ahead loci gibbuses ordain wrong sect...",
@@ -384,7 +461,7 @@ namespace PetHypnos
             "I think, therefore i am.",
             "PLAYER. I truly present here.",
             "Ring-a-round the roses.\nPocket full of posies.",
-            "PLAYER. Are you hypnotized?"
+            "A gray room...\nA gray life...\nA dusty hair dryer..."
         };
         public static HashSet<string> becomeStressed = new HashSet<string>()
         {

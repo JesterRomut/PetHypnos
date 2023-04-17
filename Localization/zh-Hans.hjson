@@ -6,7 +6,7 @@
 				DisableHypnosQuotes: "给修普诺斯禁言"
 			}
 			Tooltip: {
-				DisableHypnosQuotes: "打开这个来防止修普诺斯烦你"
+				DisableHypnosQuotes: "打开这个来防止修普诺斯烦你（仅出于实验目的关闭）"
 			}
 		}
 	}

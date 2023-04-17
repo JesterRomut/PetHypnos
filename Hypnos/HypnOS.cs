@@ -129,7 +129,7 @@ namespace PetHypnos.Hypnos
             }
         }
 
-        
+
 
         //public static Vector2 MoveTo(Vector2 currentPosition, Vector2 targetPosition, float maxAmountToMove)
         //{
@@ -403,6 +403,7 @@ namespace PetHypnos.Hypnos
 
         public Player Master => Main.player[Projectile.owner];
 
+        public object ring = null;
 
         public HypnosBehavior behavior = HypnosBehavior.ChasePlayer;
 
@@ -464,18 +465,32 @@ namespace PetHypnos.Hypnos
                 Main.dust[num6].velocity = Vector2.Normalize(RCenter - Projectile.velocity * 3f - Main.dust[num6].position) * 1.25f;
             }
 
+            //aura = new StrongBloom(Projectile.Center, Vector2.Zero, Color.HotPink * 1.1f, Projectile.scale * (1f + Main.rand.NextFloat(0f, 1.5f)) * 1.5f, 40);
+            //ring = new BloomRing(Projectile.Center, Vector2.Zero, Color.Purple * 1.2f, Projectile.scale * 1.5f, 40);
+            //GeneralParticleHandler.SpawnParticle(aura);
+            //GeneralParticleHandler.SpawnParticle(ring);
+            
+
             PetHypnosQuote.HypnosQuote(Projectile.Hitbox, PetHypnosQuotes.appear.RandomQuote(), Projectile.owner);
 
             SoundEngine.PlaySound(in calFlareSound, Projectile.Center);
 
+            if (!ModCompatibilityTypes.BloomRing.IsNull)
+            {
+                ring = Activator.CreateInstance(ModCompatibilityTypes.BloomRing.Type, Projectile.Center, Vector2.Zero, Color.Purple * 1.2f, Projectile.scale * 1.2f, 20);
+
+                ModCompatibilityTypes.GeneralParticleHandler.Type?.GetMethod("SpawnParticle")?.Invoke(null, new object[] { ring });
+            }
+            
+
             initialized = true;
         }
 
-        public static readonly SoundStyle? calFlareSound = ModCompatibility.CalamityMod != null ? new SoundStyle("CalamityMod/Sounds/Item/FlareSound") : null;
+        public static readonly SoundStyle calFlareSound = new SoundStyle("PetHypnos/Hypnos/FlareSound");
 
         public override void AI()
         {
-            Player player = Master;PetHypnosPlayer modPlayer = player.GetModPlayer<PetHypnosPlayer>();
+            Player player = Master; PetHypnosPlayer modPlayer = player.GetModPlayer<PetHypnosPlayer>();
             if (player.dead || !player.active)
             {
                 player.ClearBuff(BuffID);
@@ -587,6 +602,16 @@ namespace PetHypnos.Hypnos
                     idleQuoteCooldown--;
                 }
 
+                
+                if (ring != null)
+                {
+                    ModCompatibilityTypes.BloomRing.Type?.GetField("Position")?.SetValue(ring, RCenter);
+                    ModCompatibilityTypes.BloomRing.Type?.GetField("Velocity")?.SetValue(ring, Projectile.velocity);
+                    ModCompatibilityTypes.BloomRing.Type?.GetField("Time")?.SetValue(ring, 0);
+                    //ring.Position = Projectile.Center;
+                    //ring.Velocity = Projectile.velocity;
+                    //ring.Time = 0;
+                }
 
                 Projectile.rotation = Projectile.velocity.X * 0.05f;
 
@@ -611,9 +636,9 @@ namespace PetHypnos.Hypnos
                     flipped = false;
                 }
             }
-            
 
-            
+
+
 
             //object ring = Activator.CreateInstance(ringType, Projectile.Center, Vector2.Zero, Color.Purple * 1.2f, Projectile.scale * 1.5f, 40);
             //ring = new BloomRing(base.NPC.Center, Vector2.get_Zero(), Color.get_Purple() * 1.2f, base.NPC.scale * 1.5f, 40);
@@ -628,7 +653,8 @@ namespace PetHypnos.Hypnos
 
         private void TryDoIdleQuote(PetHypnosPlayer modPlayer)
         {
-            if (idleQuoteCooldown > 0) {
+            if (idleQuoteCooldown > 0)
+            {
                 return;
             }
             if (desiredIdleTime < 0)
@@ -641,7 +667,7 @@ namespace PetHypnos.Hypnos
                 idleQuoteCooldown.Reroll(3200, 5200);
                 desiredIdleTime.Reroll(1200, 1600);
             }
-            
+
         }
 
         public void TeleportTo(Vector2 pos)
@@ -656,6 +682,7 @@ namespace PetHypnos.Hypnos
 
         public void MakePortal()
         {
+            HideParticles();
 
             int num5 = Dust.NewDust(Projectile.position, Projectile.width, Projectile.height, DustID.Electric, 0f, 0f, 200, default(Color), 1.5f);
             Main.dust[num5].noGravity = true;
@@ -671,6 +698,7 @@ namespace PetHypnos.Hypnos
             vector *= 34f;
             Main.dust[num5].position = RCenter - vector;
 
+            
         }
 
         public Vector2 RCenter => Projectile.Center + new Vector2(Projectile.width, Projectile.height);
@@ -700,11 +728,24 @@ namespace PetHypnos.Hypnos
                 Main.EntitySpriteDraw(sprite, hypnpos, (Rectangle?)frame, lightColor, Projectile.rotation, origin, Projectile.scale, default(SpriteEffects), 0);
                 Main.EntitySpriteDraw(spriteGlow, hypnpos, (Rectangle?)frame, Color.White, Projectile.rotation, origin, Projectile.scale, default(SpriteEffects), 0);
             }
-            
+
 
 
             return false;
             //return true;
+        }
+
+        public override void Kill(int timeLeft)
+        {
+            HideParticles();
+        }
+
+        public void HideParticles()
+        {
+            if (ring != null)
+            {
+                ModCompatibilityTypes.BloomRing.Type?.GetMethod("Kill")?.Invoke(ring, null);
+            }
         }
 
         public virtual void SpecialStarKill()

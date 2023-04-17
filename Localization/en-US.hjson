@@ -6,7 +6,7 @@ Mods: {
 				DisableHypnosQuotes: "Mute Hypnos"
 			}
 			Tooltip: {
-				DisableHypnosQuotes: "Enable this to prevent hypnos from annoying you."
+				DisableHypnosQuotes: "Enable this to prevent hypnos from annoying you. (only disable for experimental purpose)"
 			}
 		}
 	}

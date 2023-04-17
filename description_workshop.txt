@@ -1,6 +1,8 @@
 it's a mod of a mod of a mod
 这是一个mod的mod的mod
 
+[b] Can run without calamity mod or hypnos mod [/b]
+
 the cause of this is i violated the rules of the hypnos server(draw hypnos p0rn), after that i said i will work for hypnos for 24/7 therefore i worked on fanarts
 事情的起因是我犯了修普诺斯服务器的规则（画修普诺斯的烧图），于是我说我要24/7的给修普诺斯画同人图，于是我就画了
 
@@ -19,6 +21,9 @@ mod includes:
 
 [img] https://jesterromut.github.io/resources/img/Hypnos/toystaff2.gif [/img]
 [img] https://jesterromut.github.io/resources/img/Hypnos/toystaff1.gif [/img]
+
+come with ring when calamity mod is present
+[img] https://jesterromut.github.io/resources/img/Hypnos/particle.png [/img]
 
 How to obtain:
 - this mod can run independently, but the only way to obtain the pet is defeating hypnos boss (hypnos in calamity mod) or you can use cheat
@@ -56,7 +61,7 @@ artist: 嘉登糖
 [img] https://jesterromut.github.io/resources/img/Hypnos/myHypnos1.png [/img]
 
 artist: 嘉登糖
-[img] https://jesterromut.github.io/resources/img/Hypnos/myHypnos2.png [/img]
+[img] https://jesterromut.github.io/resources/img/Hypnos/MyHypnos4.png [/img]
 
 artist: 三玖
 [img] https://jesterromut.github.io/resources/img/Hypnos/RandvarysHypnos.png [/img]
@@ -65,6 +70,6 @@ artist: 再三棘
 [img] https://jesterromut.github.io/resources/img/Hypnos/ZSJsHypnos.png [/img]
 
 artist: 嘉登糖
-[img] https://jesterromut.github.io/resources/img/Hypnos/myHypnos3.png [/img]
+[img] https://jesterromut.github.io/resources/img/Hypnos/MyHypnos5.png [/img]
 
 （呱！修普诺斯强袭创意工坊！）
