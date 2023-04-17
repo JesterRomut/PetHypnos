@@ -20,6 +20,13 @@ using static System.Formats.Asn1.AsnWriter;
 using System.IO;
 using static Humanizer.In;
 using Terraria.Audio;
+using CalamityMod.Particles;
+using CalamityMod.Projectiles.Boss;
+using CalamityMod;
+
+namespace PetHypnos
+{
+}
 
 namespace PetHypnos.Hypnos
 {
@@ -30,6 +37,51 @@ namespace PetHypnos.Hypnos
         Stressed
     }
 
+    [JITWhenModsEnabled("CalamityMod")]
+    public static class CalamityWeakRef
+    {
+        public static void InitRing(Projectile projectile, ref object ring, Vector2 position)
+        {
+            //aura = new StrongBloom(Projectile.Center, Vector2.Zero, Color.HotPink * 1.1f, Projectile.scale * (1f + Main.rand.NextFloat(0f, 1.5f)) * 1.5f, 40);
+            ring = new BloomRing(position, Vector2.Zero, Color.Purple * 1.2f, projectile.scale * 0.9f, 40);
+            //GeneralParticleHandler.SpawnParticle(aura);
+            GeneralParticleHandler.SpawnParticle((BloomRing)ring);
+        }
+        public static void UpdateRing(Projectile projectile, ref object ring, Vector2 position)
+        {
+            ((BloomRing)ring).Position = position;
+            ((BloomRing)ring).Velocity = projectile.velocity;
+            ((BloomRing)ring).Time = 0;
+        }
+        public static void KillParticle(ref object ring)
+        {
+            ((BloomRing)ring).Kill();
+        }
+        public static void DrawLightning(ref object lightningDrawer, ref object lightningBackgroundDrawer, Vector2 center, Vector2 pluglocation, Delegate widthFunction, Delegate colorFunction, Delegate backgroundWidthFunction, Delegate backgroundColorFunction)
+        {
+            if (lightningDrawer == null)
+            {
+                lightningDrawer = new PrimitiveTrail(
+                //(PrimitiveTrail.VertexWidthFunction)widthFunction,
+                    widthFunction.ConvertDelegate<PrimitiveTrail.VertexWidthFunction>(),
+                    colorFunction.ConvertDelegate<PrimitiveTrail.VertexColorFunction>(),
+                    PrimitiveTrail.RigidPointRetreivalFunction
+                    );
+            }
+            if (lightningBackgroundDrawer == null)
+            {
+                lightningBackgroundDrawer = new PrimitiveTrail(
+                    //(PrimitiveTrail.VertexWidthFunction)backgroundWidthFunction,
+                    //(PrimitiveTrail.VertexColorFunction)backgroundColorFunction,
+                    backgroundWidthFunction.ConvertDelegate<PrimitiveTrail.VertexWidthFunction>(),
+                    backgroundColorFunction.ConvertDelegate<PrimitiveTrail.VertexColorFunction>(),
+                    PrimitiveTrail.RigidPointRetreivalFunction);
+            }
+            List<Vector2> points4 = AresTeslaOrb.DetermineElectricArcPoints(center, pluglocation, 250290787);
+            ((PrimitiveTrail)lightningBackgroundDrawer).Draw(points4, -Main.screenPosition, 290);
+            ((PrimitiveTrail)lightningDrawer).Draw(points4, -Main.screenPosition, 290);
+        }
+    }
     public static class AIUtils
     {
         public static bool bossIsAlive
@@ -45,6 +97,12 @@ namespace PetHypnos.Hypnos
                 }
                 return false;
             }
+        }
+
+        public static Vector2 NearestPos(Vector2 here, Vector2 dest, float radius)
+        {
+            double angle = Math.Atan2(here.Y - dest.Y, here.X - dest.X);
+            return new Vector2((float)(dest.X + radius * Math.Cos(angle)), (float)(dest.Y + radius * Math.Sin(angle)));
         }
 
         public static void DoChasePosition(Projectile projectile, Vector2 pos, float speed = 16f, float inertia = 60f, float closedSpeed = 4f, float closedInertia = 80f, float speedupThreshold = 800f)
@@ -193,7 +251,7 @@ namespace PetHypnos.Hypnos
     {
         public override string Texture => "PetHypnos/Hypnos/AergiaNeuronProjectile";
         public static readonly Asset<Texture2D> glowTex = ModContent.Request<Texture2D>("PetHypnos/Hypnos/AergiaNeuronGlow");
-
+        public static readonly Asset<Texture2D> denpaTex = ModContent.Request<Texture2D>("PetHypnos/Hypnos/ToyAergianTechnistaff/DenpaEffect");
         public bool red = false;
         public static readonly Asset<Texture2D> redGlowTex = ModContent.Request<Texture2D>("PetHypnos/Hypnos/AergiaNeuronRedGlow");
 
@@ -208,6 +266,112 @@ namespace PetHypnos.Hypnos
             Projectile.scale = 0.6f;
             Projectile.ignoreWater = true;
             Projectile.netImportant = true;
+        }
+
+        public void AddElectricDusts()
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                Dust.NewDust(Projectile.position, Projectile.width, Projectile.height, DustID.Electric);
+            }
+        }
+
+
+        public static readonly Color lightningColor = new Color(0.3f, 1f, 0.9f);
+        public static readonly Color lightningColorWhite = new Color(0.9f, 1f, 1f);
+        private void DrawLightningWithoutCalamity(Vector2 pluglocation)
+        {
+            Vector2 distToProj = Projectile.Center;
+            //float projRotation = Projectile.AngleTo(pluglocation) - 1.57f;
+            bool doIDraw = true;
+            Texture2D texture = denpaTex.Value;
+            float projRotation = Projectile.AngleTo(pluglocation) - 1.57f;
+
+            //int size = 16;
+            while (doIDraw)
+            {
+                Vector2 val = pluglocation - distToProj;
+                float distance = val.Length();
+                if (distance < (float)(texture.Height + 1))
+                {
+                    doIDraw = false;
+                }
+                else if (!float.IsNaN(distance))
+                {
+                    distToProj += Projectile.DirectionTo(pluglocation) * texture.Height;
+                    float dice = Main.rand.NextFloat() * 2 - 1;
+                    //Dust.NewDustPerfect(distToProj, 45, Vector2.Zero);
+                    Main.EntitySpriteDraw(texture, distToProj - Main.screenPosition + (projRotation).ToRotationVector2() * (dice), (Rectangle?)new Rectangle(0, 0, texture.Width, texture.Height), lightningColorWhite, projRotation, texture.Size() / 2f, 1.5f, (SpriteEffects)0, 0);
+                    Main.EntitySpriteDraw(texture, distToProj - Main.screenPosition + (projRotation).ToRotationVector2() * (dice), (Rectangle?)new Rectangle(0, 0, texture.Width, texture.Height), lightningColor, projRotation, texture.Size() / 2f, 1f, (SpriteEffects)0, 0);
+
+                }
+                else
+                {
+                    doIDraw = false;
+                }
+            }
+        }
+
+        public object lightningDrawer;
+
+        public object lightningBackgroundDrawer;
+
+        #region 1
+        internal static float WidthFunction(float completionRatio)
+        {
+            float ratio = 0.9f;
+            //if ((hypnos.ai[2] < 120f && hypnos.ai[0] == 6f && base.NPC.ai[1] >= 4f) || (hypnos.ai[2] < 60f && hypnos.ai[0] == 6f && base.NPC.ai[1] < 4f))
+            //{
+            //    return 0.2f;
+            //}
+            //if (hypnos.ai[2] >= 60f && hypnos.ai[0] == 6f && base.NPC.ai[1] < 4f)
+            //{
+            //    return 1.1f;
+            //}
+            //if (hypnos.ai[0] == 10f && base.NPC.ai[1] > 0f)
+            //{
+            //    return 1.8f;
+            //}
+            return 0.9f;
+        }
+
+        internal static float BackgroundWidthFunction(float completionRatio)
+        {
+            return WidthFunction(completionRatio) * 4f;
+        }
+
+        public static Color BackgroundColorFunction(float completionRatio)
+        {
+            return Color.CornflowerBlue * 0.4f;
+        }
+
+        internal static Color ColorFunction(float completionRatio)
+        {
+            Color baseColor1 = Color.Cyan;
+            Color baseColor2 = Color.Cyan;
+            float fadeToWhite = MathHelper.Lerp(0f, 0.65f, (float)Math.Sin((float)Math.PI * 2f * completionRatio + Main.GlobalTimeWrappedHourly * 4f) * 0.5f + 0.5f);
+            Color color = Color.Lerp(Color.Lerp(baseColor1, Color.White, fadeToWhite), baseColor2, ((float)Math.Sin((float)Math.PI * completionRatio + Main.GlobalTimeWrappedHourly * 4f) * 0.5f + 0.5f) * 0.8f) * 0.65f;
+            color.A = (byte)84;
+            return color;
+        }
+
+        #endregion 1
+
+        internal void DrawLightningWithCalamity(Vector2 pluglocation)
+        {
+            CalamityWeakRef.DrawLightning(ref lightningDrawer, ref lightningBackgroundDrawer, Projectile.Center, pluglocation, WidthFunction, ColorFunction, BackgroundWidthFunction, BackgroundColorFunction);
+        }
+
+        internal void DrawLightning(Vector2 pluglocation)
+        {
+            if (ModCompatibility.calamityEnabled)
+            {
+                DrawLightningWithCalamity(pluglocation);
+            }
+            else
+            {
+                DrawLightningWithoutCalamity(pluglocation);
+            }
         }
 
         public override void PostDraw(Color lightColor)
@@ -317,6 +481,10 @@ namespace PetHypnos.Hypnos
 
                 if (distanceToMaster > 120f)
                 {
+                    if (red == false)
+                    {
+                        AddElectricDusts();
+                    }
                     red = true;
                 }
                 else
@@ -329,6 +497,7 @@ namespace PetHypnos.Hypnos
                 if (red)
                 {
                     liiight = Color.HotPink.ToVector3() * 1.2f;
+                    
                 }
 
                 Lighting.AddLight(Projectile.Center, liiight);
@@ -338,12 +507,8 @@ namespace PetHypnos.Hypnos
             else
             {
                 red = false;
-                double angle = Math.Atan2(Projectile.Center.Y - master.Center.Y, Projectile.Center.X - master.Center.X);
-                float radius = 60f;
 
-                Vector2 target = new Vector2((float)(master.Center.X + radius * Math.Cos(angle)), (float)(master.Center.Y + radius * Math.Sin(angle)));
-
-                AIUtils.DoChasePosition(Projectile, target, 20f, 40f, 6f, 16f);
+                AIUtils.DoChasePosition(Projectile, AIUtils.NearestPos(Projectile.Center, master.Center, 60f), 20f, 40f, 6f, 16f);
 
             }
 
@@ -351,33 +516,23 @@ namespace PetHypnos.Hypnos
 
         }
 
+        public override bool PreDraw(ref Color lightColor)
+        {
+            if (red)
+            {
+                Vector2 dest = ((BaseHypnosPetProjectile)master.ModProjectile).RCenter;
+                DrawLightning(dest);
+                foreach(int i in Enumerable.Range(0, (int)(Projectile.Center.Distance(dest) / 32)))
+                {
+                    Lighting.AddLight(AIUtils.NearestPos(Projectile.Center, dest, Projectile.Center.Distance(dest) - i * 32), Color.Aqua.ToVector3() * 0.5f);
+                    
+                }
+            }
+            return true;
+        }
+
 
     }
-
-    //internal class RollableInt
-    //{
-    //    public int min;
-    //    public int max;
-    //    public RollableInt(int min, int max, int defaultValue) {
-    //        this.min = min;
-    //        this.max = max;
-    //        this.value= defaultValue;
-    //    }
-
-    //    public int Value
-    //    {
-    //        get
-    //        {
-    //            return value;
-    //        }
-    //    }
-    //    private int value;
-
-    //    public void Reroll()
-    //    {
-    //        value = Main.rand.Next(min, max);
-    //    }
-    //}
 
     public abstract class BaseHypnosPetProjectile : ModProjectile
     {
@@ -475,13 +630,16 @@ namespace PetHypnos.Hypnos
 
             SoundEngine.PlaySound(in calFlareSound, Projectile.Center);
 
-            if (!ModCompatibilityTypes.BloomRing.IsNull)
-            {
-                ring = Activator.CreateInstance(ModCompatibilityTypes.BloomRing.Type, Projectile.Center, Vector2.Zero, Color.Purple * 1.2f, Projectile.scale * 1.2f, 20);
+            //if (!ModCompatibilityTypes.BloomRing.IsNull)
+            //{
+            //    ring = Activator.CreateInstance(ModCompatibilityTypes.BloomRing.Type, Projectile.Center, Vector2.Zero, Color.Purple * 1.2f, Projectile.scale * 1.2f, 20);
 
-                ModCompatibilityTypes.GeneralParticleHandler.Type?.GetMethod("SpawnParticle")?.Invoke(null, new object[] { ring });
+            //    ModCompatibilityTypes.GeneralParticleHandler.Type?.GetMethod("SpawnParticle")?.Invoke(null, new object[] { ring });
+            //}
+            if (ModCompatibility.calamityEnabled)
+            {
+                CalamityWeakRef.InitRing(Projectile, ref ring, RCenter);
             }
-            
 
             initialized = true;
         }
@@ -602,15 +760,10 @@ namespace PetHypnos.Hypnos
                     idleQuoteCooldown--;
                 }
 
-                
-                if (ring != null)
+
+                if (ring != null && ModCompatibility.calamityEnabled)
                 {
-                    ModCompatibilityTypes.BloomRing.Type?.GetField("Position")?.SetValue(ring, RCenter);
-                    ModCompatibilityTypes.BloomRing.Type?.GetField("Velocity")?.SetValue(ring, Projectile.velocity);
-                    ModCompatibilityTypes.BloomRing.Type?.GetField("Time")?.SetValue(ring, 0);
-                    //ring.Position = Projectile.Center;
-                    //ring.Velocity = Projectile.velocity;
-                    //ring.Time = 0;
+                    CalamityWeakRef.UpdateRing(Projectile, ref ring, RCenter);
                 }
 
                 Projectile.rotation = Projectile.velocity.X * 0.05f;
@@ -742,9 +895,9 @@ namespace PetHypnos.Hypnos
 
         public void HideParticles()
         {
-            if (ring != null)
+            if (ring != null && ModCompatibility.calamityEnabled)
             {
-                ModCompatibilityTypes.BloomRing.Type?.GetMethod("Kill")?.Invoke(ring, null);
+                CalamityWeakRef.KillParticle(ref ring);
             }
         }
 

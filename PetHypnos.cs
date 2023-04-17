@@ -37,10 +37,8 @@ namespace PetHypnos
 
         public override void PostSetupContent()
         {
-            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                Logger.Info(assembly.GetName().Name);
-            }
+            ModCompatibility.calamityEnabled = ModLoader.HasMod("CalamityMod");
+            ModCompatibility.hypnosEnabled = ModLoader.HasMod("Hypnos");
         }
 
     }
@@ -74,13 +72,26 @@ namespace PetHypnos
             num = Main.rand.Next(min, max);
         }
 
-        internal static IEnumerable<Assembly> GetAssemblyByName(this AppDomain domain, string name)
+        internal static Delegate ConvertDelegate(this Delegate sourceDelegate, Type targetType)
         {
-            return domain.GetAssemblies().Where(assembly => assembly.GetName().Name == name);
+            return Delegate.CreateDelegate(
+                    targetType,
+                    sourceDelegate.Target,
+                    sourceDelegate.Method);
         }
+
+        internal static T ConvertDelegate<T>(this Delegate sourceDelegate) where T : Delegate
+        {
+            return (T)sourceDelegate.ConvertDelegate(typeof(T));
+        }
+
+        //internal static IEnumerable<Assembly> GetAssemblyByName(this AppDomain domain, string name)
+        //{
+        //    return domain.GetAssemblies().Where(assembly => assembly.GetName().Name == name);
+        //}
     }
 
-    public class PetHypnosPlayer : ModPlayer
+    public partial class PetHypnosPlayer : ModPlayer
     {
         private bool shouldSyncMouse = false;
 
@@ -91,11 +102,6 @@ namespace PetHypnos
         public bool shouldCheckMouseWorld = false;
         public Vector2 mouseWorld;
         private Vector2 mouseWorldOld;
-
-        public float spinOffset = 0;
-        public int currentGhostHypnosIndex = -1;
-        public int desiredNeurons = 0;
-        public Item technistaff = null;
 
         public int idleTime = 0;
         public Vector2 positionOld;
@@ -181,6 +187,113 @@ namespace PetHypnos
         }
     }
 
+    //public static class ModCompatibility
+    //{
+    //    public static Mod CalamityMod
+    //    {
+    //        get
+    //        {
+    //            if (calamityMod == null)
+    //            {
+    //                ModLoader.TryGetMod("CalamityMod", out calamityMod);
+    //            }
+    //            return calamityMod;
+    //        }
+    //    }
+    //    private static Mod calamityMod;
+
+    //    public static int VioletOrPurple
+    //    {
+    //        get
+    //        {
+    //            if (calamityModVioletID == null && (CalamityMod?.TryFind("Violet", out ModRarity calamityModViolet) ?? false))
+    //            {
+    //                calamityModVioletID = calamityModViolet.Type;
+    //            }
+    //            return calamityModVioletID ?? ItemRarityID.Purple;
+    //        }
+    //    }
+    //    private static int? calamityModVioletID = null;
+
+    //    public static Mod Hypnos
+    //    {
+    //        get
+    //        {
+    //            if (hypnos == null)
+    //            {
+    //                ModLoader.TryGetMod("Hypnos", out hypnos);
+    //            }
+    //            return hypnos;
+    //        }
+    //    }
+    //    private static Mod hypnos;
+
+    //    //public static Dictionary<string, Type> modCompatibilityTypes = new Dictionary<string, Type>()
+    //    //{
+    //    //    {"BloomRing", null},
+    //    //    {"ThisShouldNotExistReallyyyyyyy", null}
+    //    //};
+    //    public static MethodInfo GetMethodInfo(Delegate d)
+    //    {
+    //        return d.Method;
+    //    }
+    //}
+
+    //public class ModCompatibilityType
+    //{
+    //    public Type Type
+    //    {
+    //        get
+    //        {
+    //            if(type== null)
+    //            {
+    //                type = Assemblies.LastOrDefault()?.GetType(typeName);
+                    
+    //            }
+    //            return type;
+    //        }
+    //    }
+    //    private Type type = null;
+    //    public string typeName;
+
+    //    public IEnumerable<Assembly> Assemblies
+    //    {
+    //        get
+    //        {
+    //            return AppDomain.CurrentDomain.GetAssemblyByName(assemblyName);
+    //        }
+    //    }
+
+    //    public string assemblyName;
+    //    public bool IsNull
+    //    {
+    //        get
+    //        {
+    //            return Type == null;
+    //        }
+    //    }
+    //    public ModCompatibilityType(string typeName, string assemblyName)
+    //    {
+    //        this.typeName = typeName;
+    //        this.assemblyName = assemblyName;
+    //    }
+    //}
+
+    //public static class ModCompatibilityTypes
+    //{
+    //    public static readonly string calamityAssemblyName = "CalamityMod";
+
+    //    public static ModCompatibilityType CommonCalamitySounds = new ModCompatibilityType("CalamityMod.Sounds.CommonCalamitySounds", calamityAssemblyName);
+
+    //    public static ModCompatibilityType Particle = new ModCompatibilityType("CalamityMod.Particles.Particle", calamityAssemblyName);
+    //    public static ModCompatibilityType GeneralParticleHandler = new ModCompatibilityType("CalamityMod.Particles.GeneralParticleHandler", calamityAssemblyName);
+
+    //    public static ModCompatibilityType BloomRing = new ModCompatibilityType("CalamityMod.Particles.BloomRing", calamityAssemblyName);
+    //    public static ModCompatibilityType StrongBloom = new ModCompatibilityType("CalamityMod.Particles.StrongBloom", calamityAssemblyName);
+    //    public static ModCompatibilityType PrimitiveTrail = new ModCompatibilityType("CalamityMod.PrimitiveTrail", calamityAssemblyName);
+    //    public static ModCompatibilityType AresTeslaOrb = new ModCompatibilityType("CalamityMod.Projectiles.Boss.AresTeslaOrb", calamityAssemblyName);
+    //}
+
     public static class ModCompatibility
     {
         public static Mod CalamityMod
@@ -222,65 +335,14 @@ namespace PetHypnos
         }
         private static Mod hypnos;
 
-        //public static Dictionary<string, Type> modCompatibilityTypes = new Dictionary<string, Type>()
-        //{
-        //    {"BloomRing", null},
-        //    {"ThisShouldNotExistReallyyyyyyy", null}
-        //};
         
+        public static bool calamityEnabled = false;
+        public static bool hypnosEnabled = false;
     }
 
-    public class ModCompatibilityType
-    {
-        public Type Type
-        {
-            get
-            {
-                if(type== null)
-                {
-                    type = Assemblies.LastOrDefault()?.GetType(typeName);
-                    
-                }
-                return type;
-            }
-        }
-        private Type type = null;
-        public string typeName;
-
-        public IEnumerable<Assembly> Assemblies
-        {
-            get
-            {
-                return AppDomain.CurrentDomain.GetAssemblyByName(assemblyName);
-            }
-        }
-
-        public string assemblyName;
-        public bool IsNull
-        {
-            get
-            {
-                return Type == null;
-            }
-        }
-        public ModCompatibilityType(string typeName, string assemblyName)
-        {
-            this.typeName = typeName;
-            this.assemblyName = assemblyName;
-        }
+    public static partial class ModCompatibilityTypes {
     }
 
-    public static class ModCompatibilityTypes
-    {
-        public static readonly string calamityAssemblyName = "CalamityMod";
-
-        public static ModCompatibilityType CommonCalamitySounds = new ModCompatibilityType("CalamityMod.Sounds.CommonCalamitySounds", calamityAssemblyName);
-
-        public static ModCompatibilityType Particle = new ModCompatibilityType("CalamityMod.Particles.Particle", calamityAssemblyName);
-        public static ModCompatibilityType BloomRing = new ModCompatibilityType("CalamityMod.Particles.BloomRing", calamityAssemblyName);
-        public static ModCompatibilityType StrongBloom = new ModCompatibilityType("CalamityMod.Particles.StrongBloom", calamityAssemblyName);
-        public static ModCompatibilityType GeneralParticleHandler = new ModCompatibilityType("CalamityMod.Particles.GeneralParticleHandler", calamityAssemblyName);
-    }
 
     public class PetHypnosRecipes : ModSystem
     {

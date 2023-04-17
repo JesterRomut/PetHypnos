@@ -7,7 +7,7 @@ the cause of this is i violated the rules of the hypnos server(draw hypnos p0rn)
 事情的起因是我犯了修普诺斯服务器的规则（画修普诺斯的烧图），于是我说我要24/7的给修普诺斯画同人图，于是我就画了
 
 mod includes:
-- angelic pet hypnos, can be used as pet or light pet (no difference except buff icon and item icon)
+- pet hypnos, can be used as pet or light pet (no difference except buff icon and item icon)
 - pet hypnos comes with its little aergia neurons
 - aergia neurons can somewhat be attracted to mouse and emit a little pink light
 - pet buff tooltip changes every time when you load the mod
@@ -22,8 +22,8 @@ mod includes:
 [img] https://jesterromut.github.io/resources/img/Hypnos/toystaff2.gif [/img]
 [img] https://jesterromut.github.io/resources/img/Hypnos/toystaff1.gif [/img]
 
-come with ring when calamity mod is present
-[img] https://jesterromut.github.io/resources/img/Hypnos/particle.png [/img]
+come with effects when calamity mod is present
+[img] https://jesterromut.github.io/resources/img/Hypnos/particle3.png [/img]
 
 How to obtain:
 - this mod can run independently, but the only way to obtain the pet is defeating hypnos boss (hypnos in calamity mod) or you can use cheat

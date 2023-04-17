@@ -10,4 +10,12 @@
   <ItemGroup>
     <PackageReference Include="tModLoader.CodeAssist" Version="0.1.*" />
   </ItemGroup>
+  <ItemGroup>
+    <Reference Include="CalamityMod">
+      <HintPath>..\ModAssemblies\CalamityMod.dll</HintPath>
+    </Reference>
+    <Reference Include="Hypnos">
+      <HintPath>..\ModAssemblies\Hypnos.dll</HintPath>
+    </Reference>
+  </ItemGroup>
 </Project>

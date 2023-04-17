@@ -16,10 +16,26 @@ using Microsoft.CodeAnalysis.Rename;
 using System.IO;
 using System.Reflection;
 using Mono.Cecil;
+using static Terraria.Utilities.NPCUtils;
+
+namespace PetHypnos
+{
+    public static partial class ModCompatibilityTypes
+    {
+
+    }
+
+    public partial class PetHypnosPlayer
+    {
+        public float spinOffset = 0;
+        public int currentGhostHypnosIndex = -1;
+        public int desiredNeurons = 0;
+        public Item technistaff = null;
+    }
+}
 
 namespace PetHypnos.Hypnos.ToyAergianTechnistaff
 {
-
     public static class ToyUtils
     {
         public static NPC FindTargetCareBuff(Projectile projectile, Player player)
@@ -168,7 +184,7 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             return TryGetHypnos(player.GetModPlayer<PetHypnosPlayer>());
         }
 
-        
+
     }
 
     public class ToyAergianTechnistaff : ModItem
@@ -253,9 +269,9 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
                 if ((float)player.maxMinions - player.slotsMinions >= 1f && player.ownedProjectileCounts[aergiaNeuronType] < 12)
                 {
 
-                    
+
                     PetHypnosPlayer modPlayer = player.GetModPlayer<PetHypnosPlayer>();
-                    
+
 
                     modPlayer.desiredNeurons += 2;
                     modPlayer.technistaff = Item;
@@ -366,10 +382,9 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
 
     public class ToyAergiaNeuronProjectile : BaseAergiaNeuronProjectile
     {
-
         //public bool sticked = false;
 
-        public static readonly Asset<Texture2D> denpaTex = ModContent.Request<Texture2D>("PetHypnos/Hypnos/ToyAergianTechnistaff/DenpaEffect");
+        
 
         public override bool? CanCutTiles() => false;
         public override bool MinionContactDamage()
@@ -482,6 +497,8 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             return true;
         }
 
+        
+
         private void DoRightClickBehavior(Player player, PetHypnosPlayer modPlayer)
         {
             Projectile hypnos = ToyUtils.TryGetHypnos(modPlayer);//Main.projectile.ElementAtOrDefault(modPlayer.currentGhostHypnosIndex);
@@ -492,16 +509,13 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             Vector2 dest = ((float)Math.PI * 2f * AergiaIndex / (float)player.ownedProjectileCounts[Type] - hypnos.scale * hypnosMod.time * 0.03f - offset).ToRotationVector2() * 100f + hypnos.Center;
 
             red = true;
-            
+
             if (hypnosMod.FullyCharged)
             {
                 if (shouldDrawLightning == false)
                 {
-                    for(int i = 0; i < 3;i++)
-                    {
-                        Dust.NewDust(Projectile.position, Projectile.width, Projectile.height, DustID.Electric);
-                    }
-                    
+                    AddElectricDusts();
+
                 }
                 shouldDrawLightning = true;
             }
@@ -509,7 +523,10 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             {
                 shouldDrawLightning = false;
             }
-
+            if (Projectile.Center.Distance(dest) > player.Center.Distance(dest) * 2)
+            {
+                TeleportToPlayer(player);
+            }
 
             Vector3 liiight = Color.HotPink.ToVector3() * 1.2f;
 
@@ -518,40 +535,6 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             //AIUtils.DoReachPosition(Projectile, dest - Projectile.Center, player, 26f, 40f, 16f);
             AIUtils.DoMoveTo3(Projectile, dest, 0.03f);
             //AIUtils.DoReachPosition(Projectile, dest - Projectile.Center, hypnos, hypnos.scale * 100f + 12f, 4f, 16f);
-        }
-        public static readonly Color lightningColor = new Color(0.3f, 1f, 0.9f);
-        public static readonly Color lightningColorWhite = new Color(0.9f, 1f, 1f);
-        private void DrawLightning(Vector2 pluglocation)
-        {
-            Vector2 distToProj = Projectile.Center;
-            //float projRotation = Projectile.AngleTo(pluglocation) - 1.57f;
-            bool doIDraw = true;
-            Texture2D texture = denpaTex.Value;
-            float projRotation = Projectile.AngleTo(pluglocation) - 1.57f;
-            
-            //int size = 16;
-            while (doIDraw)
-            {
-                Vector2 val = pluglocation - distToProj;
-                float distance = val.Length();
-                if (distance < (float)(texture.Height + 1))
-                {
-                    doIDraw = false;
-                }
-                else if (!float.IsNaN(distance))
-                {
-                    distToProj += Projectile.DirectionTo(pluglocation) * texture.Height;
-                    float dice = Main.rand.NextFloat() * 2 - 1;
-                    //Dust.NewDustPerfect(distToProj, 45, Vector2.Zero);
-                    Main.EntitySpriteDraw(texture, distToProj - Main.screenPosition + (projRotation).ToRotationVector2() * (dice), (Rectangle?)new Rectangle(0, 0, texture.Width, texture.Height), lightningColorWhite, projRotation, texture.Size() / 2f, 1.5f, (SpriteEffects)0, 0);
-                    Main.EntitySpriteDraw(texture, distToProj - Main.screenPosition + (projRotation).ToRotationVector2() * (dice), (Rectangle?)new Rectangle(0, 0, texture.Width, texture.Height), lightningColor, projRotation, texture.Size() / 2f, 1f, (SpriteEffects)0, 0);
-                    
-                }
-                else
-                {
-                    doIDraw = false;
-                }
-            }
         }
 
         private void TeleportToPlayer(Player player)
@@ -563,17 +546,14 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
 
         private void DoCommonBehavior(Player player, PetHypnosPlayer modPlayer)
         {
-            if (red)
-            {
-                TeleportToPlayer(player);
-            }
+            
             red = false;
             shouldDrawLightning = false;
 
             if (!Projectile.WithinRange(player.Center, 1800f))
             {
                 TeleportToPlayer(player);
-                
+
             }
 
             if (shotCooldown == 0)
@@ -590,6 +570,10 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             //这玩意转一圈是一个派
             Vector2 dest = ((float)Math.PI * 2f * AergiaIndex / (float)player.ownedProjectileCounts[Type] + offset).ToRotationVector2() * 100f + player.Center;
 
+            if (Projectile.Center.Distance(dest) > player.Center.Distance(dest) * 2)
+            {
+                TeleportToPlayer(player);
+            }
             //float rottimer = 0;
             //int owned = 12;
             //double test = (360 / owned);
@@ -656,6 +640,9 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
         public bool FullyCharged => Projectile.scale >= 0.7f;
         public bool released = false;
         public int time = 0;
+
+        public bool returningToPlayer = false;
+        public static readonly int startTimeout = 60;
 
         public static readonly Asset<Texture2D> tex = ModContent.Request<Texture2D>("PetHypnos/Hypnos/HypnosPetProjectile");
         public override bool PreDraw(ref Color lightColor)
@@ -755,7 +742,7 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
 
             if (!released)
             {
-                Projectile.timeLeft = 60;
+                Projectile.timeLeft = startTimeout;
                 Vector2 hoverDestination = player.Top + new Vector2((float)player.direction * base.Projectile.scale * 30f, 0);
                 hoverDestination += (modPlayer.mouseWorld - hoverDestination) * 0.09f;
                 //player.position - player.Size + new Vector2( 20f * player.direction, 30f * Projectile.scale
@@ -786,21 +773,34 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             }
             else
             {
-                if (!Projectile.WithinRange(player.Center, 4000f))
+                if (returningToPlayer)
                 {
-                    Projectile.Center = player.Center;
-                    Projectile.netUpdate = true;
-                }
-                NPC mayTarget = ToyUtils.FindTarget(Projectile, player, 1200f);
-                if (mayTarget != null)
-                {
-                    Projectile.timeLeft = 60;
-                    TryAttackNPC(mayTarget);
-
+                    Projectile.timeLeft = startTimeout;
+                    AIUtils.DoChasePosition(Projectile, player.Center, 60, 10, 33, 10);
+                    if (Projectile.WithinRange(player.Center, 50f))
+                    {
+                        returningToPlayer = false;
+                    }
                 }
                 else
                 {
-                    Projectile.velocity = Projectile.velocity.ToRotation().ToRotationVector2() * 33f;
+                    if (!Projectile.WithinRange(player.Center, 4000f))
+                    {
+                        //Projectile.Center = player.Center;
+                        //Projectile.netUpdate = true;
+                        returningToPlayer = true;
+                    }
+                    NPC mayTarget = ToyUtils.FindTarget(Projectile, player, 1200f);
+                    if (mayTarget != null)
+                    {
+                        Projectile.timeLeft = startTimeout;
+                        TryAttackNPC(mayTarget);
+
+                    }
+                    else
+                    {
+                        Projectile.velocity = Projectile.velocity.ToRotation().ToRotationVector2() * 33f;
+                    }
                 }
             }
 
