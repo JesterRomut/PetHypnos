@@ -547,7 +547,8 @@ namespace PetHypnos
             "What is this? An amnesia spray? Try it.",
             "You wake up to more nightmares",
             "3 body problem",
-            "Y2000 Mindcrash"
+            "Y2000 Mindcrash",
+            "EATEOT"
         };
         public static PetHypnosQuoteCollection toystaffAttack = new PetHypnosQuoteCollection()
         {
