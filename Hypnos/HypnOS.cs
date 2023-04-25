@@ -88,14 +88,22 @@ namespace PetHypnos.Hypnos
         {
             get
             {
-                foreach (NPC npc in Main.npc)
-                {
-                    if (npc.active && npc.boss)
-                    {
-                        return true;
-                    }
-                }
-                return false;
+                //foreach (NPC npc in Main.npc)
+                //{
+                //    if (npc.active && npc.boss)
+                //    {
+                //        return true;
+                //    }
+                //}
+                return Main.npc.Any(npc => npc.active && npc.boss);
+            }
+        }
+
+        public static bool hypnosBossIsAlive
+        {
+            get
+            {
+                return Main.npc.Any(npc => npc.active && npc.type == ModCompatibility.HypnosBoss);
             }
         }
 
@@ -626,7 +634,7 @@ namespace PetHypnos.Hypnos
             //GeneralParticleHandler.SpawnParticle(ring);
             
 
-            PetHypnosQuote.HypnosQuote(Projectile.Hitbox, PetHypnosQuotes.appear.RandomQuote(), Projectile.owner);
+            PetHypnosQuote.HypnosQuote(Projectile, PetHypnosQuotes.appear.RandomQuote());
 
             SoundEngine.PlaySound(in calFlareSound, Projectile.Center);
 
@@ -684,11 +692,15 @@ namespace PetHypnos.Hypnos
                 Vector2 vectorToIdlePosition = idlePosition - Projectile.Center;
                 float distanceToIdlePosition = vectorToIdlePosition.Length();
 
-                if (AIUtils.bossIsAlive)
+                if (AIUtils.bossIsAlive )
                 {
-                    behavior = HypnosBehavior.Stressed;
+                    if(behavior != HypnosBehavior.Stressed)
+                    {
+                        behavior = HypnosBehavior.Stressed;
+                        PetHypnosQuote.HypnosQuote(Projectile, AIUtils.hypnosBossIsAlive ? PetHypnosQuotes.becomeStressedWithItself.RandomQuote() : PetHypnosQuotes.becomeStressed.RandomQuote());
+                    }
+                    
                 }
-
                 else if (Main.myPlayer == Projectile.owner && ((modPlayer.mouseWorld - player.Center).Length() < 300f && distanceToIdlePosition < 400f))
                 {
                     behavior = HypnosBehavior.ChaseMouse;
@@ -816,7 +828,7 @@ namespace PetHypnos.Hypnos
             }
             if (modPlayer.idleTime > desiredIdleTime)
             {
-                PetHypnosQuote.HypnosQuote(Projectile.Hitbox, PetHypnosQuotes.idle.RandomQuote(), Projectile.owner, false);
+                PetHypnosQuote.HypnosQuote(Projectile, PetHypnosQuotes.idle.RandomQuote());
                 idleQuoteCooldown.Reroll(3200, 5200);
                 desiredIdleTime.Reroll(1200, 1600);
             }
@@ -925,7 +937,7 @@ namespace PetHypnos.Hypnos
 
     public abstract class BaseHypnosPetBuff : ModBuff
     {
-        public static HashSet<string> bible => PetHypnosQuotes.buffTooltip;
+        public static PetHypnosQuoteCollection bible => PetHypnosQuotes.buffTooltip;
 
         public string Curren
         {

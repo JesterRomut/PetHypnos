@@ -752,7 +752,7 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
 
                     if (FullyCharged)
                     {
-                        PetHypnosQuote.HypnosQuote(Projectile.Hitbox, PetHypnosQuotes.toystaffAttack.RandomQuote(), Projectile.owner);
+                        PetHypnosQuote.HypnosQuote(Projectile, PetHypnosQuotes.toystaffAttack.RandomQuote());
                         if (Main.myPlayer == base.Projectile.owner)
                         {
                             base.Projectile.velocity = (modPlayer.mouseWorld - Projectile.Center).SafeNormalize(default) * 33f;

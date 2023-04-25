@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using log4net.Repository.Hierarchy;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
 using PetHypnos.Hypnos;
 using Terraria;
 using Terraria.GameContent.ItemDropRules;
@@ -62,9 +60,9 @@ namespace PetHypnos
                 packet.Send(-1, player.whoAmI);
             }
         }
-        internal static T RandomQuote<T>(this HashSet<T> li)
+        internal static T Random<T>(this IEnumerable<T> li)
         {
-            return li.ElementAt(Main.rand.Next(li.Count));
+            return li.ElementAt(Main.rand.Next(li.Count()));
         }
 
         internal static void Reroll(this ref int num, int min, int max)
@@ -335,6 +333,19 @@ namespace PetHypnos
         }
         private static Mod hypnos;
 
+        public static int HypnosBoss
+        {
+            get
+            {
+                if (hypnosBoss == -1 && (ModCompatibility.Hypnos?.TryFind("HypnosBoss", out ModNPC bosstype) ?? false))
+                {
+                    hypnosBoss = bosstype.Type;
+                }
+                
+                return hypnosBoss;
+            }
+        }
+        private static int hypnosBoss = -1;
         
         public static bool calamityEnabled = false;
         public static bool hypnosEnabled = false;
@@ -379,10 +390,8 @@ namespace PetHypnos
 
         public override void OnKill(NPC npc)
         {
-            if (npc.boss && (ModCompatibility.Hypnos?.TryFind("HypnosBoss", out ModNPC hypBoss) ?? false))
+            if (npc.boss && npc.type == ModCompatibility.HypnosBoss)
             {
-                if (npc.type == hypBoss.Type)
-                {
                     int hypPetType = ModContent.ProjectileType<HypnosPetProjectile>();
                     int hypLightPetType = ModContent.ProjectileType<HypnosLightPetProjectile>();
                     foreach (Projectile projectile in Main.projectile)
@@ -391,7 +400,7 @@ namespace PetHypnos
                         {
                             ((BaseHypnosPetProjectile)projectile.ModProjectile).SpecialStarKill();
                         }
-                    }
+                    
                 }
             }
         }
@@ -414,10 +423,10 @@ namespace PetHypnos
 
     public class PetHypnosQuote
     {
-        //public PetHypnosQuote(string key)
-        //{
-        //    this.key = key;
-        //}
+        public PetHypnosQuote(string value)
+        {
+            this.value = value;
+        }
 
         //public HashSet<string> Quotes
         //{
@@ -432,17 +441,28 @@ namespace PetHypnos
         //}
         //private HashSet<string> quotes = null;
 
-        //public string key;
-        public static void HypnosQuote(Rectangle displayZone, string quote, int owner, bool dramatic = false)
+        private string value;
+        public string Value
+        {
+            get { return value; }
+        }
+
+        private bool cooldown = false;
+        public bool Cooldown
+        {
+            get { return cooldown; }
+        }
+        public static void HypnosQuote(Projectile projectile, string quote, bool dramatic = false)
         {
             if (PetHypnosConfig.Instance.DisableHypnosQuotes == true)
             {
                 return;
             }
-            if (Main.myPlayer != owner)
+            if (Main.myPlayer != projectile.owner)
             {
                 return;
             }
+            Rectangle displayZone = projectile.Hitbox;
             string[] quotes = quote.Split("\n", StringSplitOptions.RemoveEmptyEntries);
             displayZone.Y -= (quotes.Length - 1) * 30;
             foreach (string s in quotes)
@@ -451,15 +471,60 @@ namespace PetHypnos
                 displayZone.Y += 30;
             }
         }
+        public void EnableCooldown()
+        {
+            cooldown= true;
+        }
+        public void DisableCooldown()
+        {
+            cooldown= false;
+        }
+    }
 
+    public class PetHypnosQuoteCollection: Collection<PetHypnosQuote>, IEnumerable<PetHypnosQuote>
+    {
+        //public PetHypnosQuoteHashSet(IEnumerable<string> quotes): base(quotes.Select(st => new PetHypnosQuote(st))) { }
+        private string RandomQuote(int counter)
+        {
+            if (counter > 100)
+            {
+                throw new StackOverflowException();
+            }
+            IEnumerable<PetHypnosQuote> hashset = this.Where(quote => !quote.Cooldown);
+            if (!hashset.Any())
+            {
+                DisableAllCooldown();
+                return RandomQuote(counter+1);
+            }
+            PetHypnosQuote chosen = hashset.Random();
+            chosen.EnableCooldown();
+            return chosen.Value;
+        }
+
+        public string RandomQuote()
+        {
+            return RandomQuote(0);
+        }
+
+        public void DisableAllCooldown()
+        {
+            foreach(PetHypnosQuote quote in this)
+            {
+                quote.DisableCooldown();
+            }
+        }
+
+        public void Add(string st)
+        {
+            this.Add(new PetHypnosQuote(st));
+        }
     }
 
     public static class PetHypnosQuotes
     {
-        public static HashSet<string> buffTooltip = new HashSet<string>() {
+        public static PetHypnosQuoteCollection buffTooltip = new PetHypnosQuoteCollection() {
             "Tiny Hypnos' assault on Thanatos keep", //小修普诺斯强袭塔纳堡
             "The day you went away",
-
             "Hypnos brings forth innumerable things to nurture man", //修普诺斯生万物以养人
             "From the great above to the great below", //从伟大的天到伟大的地
             "When the flying birds are done with, the good bow is stored away; when the sly rabbit dies, the hunting dog is boiled.", //飞鸟尽，良弓藏；狡兔死，走狗烹
@@ -479,9 +544,12 @@ namespace PetHypnos
             "I truly present here",
             "Your ip has been banned for INFINITE",
             "Your best cutter",
-            "What is this? An amnesia spray? Try it."
+            "What is this? An amnesia spray? Try it.",
+            "You wake up to more nightmares",
+            "3 body problem",
+            "Y2000 Mindcrash"
         };
-        public static HashSet<string> toystaffAttack = new HashSet<string>()
+        public static PetHypnosQuoteCollection toystaffAttack = new PetHypnosQuoteCollection()
         {
             "Ladies✰ and gentlemen.",
             "Let's start.",
@@ -502,33 +570,54 @@ namespace PetHypnos
             "Blessed are the dead who die in the Lord!",
             "Merry Christmas.",
             "Nya Poka.",
-            "Your best cutter✰"
+            "Your best cutter✰",
+            "Are you ready✰",
+            "You wake up to more nightmares.",
         };
 
-        public static HashSet<string> appear = new HashSet<string>() {
+        public static PetHypnosQuoteCollection appear = new PetHypnosQuoteCollection() {
             "Wild✰Hypnos appeared!",
             "Oh haiiii!",
             "Glitter✰ landing!",
             "Yo, player!",
             "For ya.",
             "Player✰",
-            "More cutter."
+            "More cutter.",
+            "Are you ready✰"
         };
-        public static HashSet<string> idle = new HashSet<string>() {
+        public static PetHypnosQuoteCollection idle = new PetHypnosQuoteCollection {
             "Ahead loci gibbuses ordain wrong sect...",
             "Once upon a time...",
             "PLAYER. Will you leave?",
             "Player. player. PLAYER. PLAYER. PLAYER.",
-            "What do you know What do you play What do you remember What do you love",
+            "What do you know\nWhat do you play\nWhat do you remember\nWhat do you love",
             "I think, therefore i am.",
             "PLAYER. I truly present here.",
             "Ring-a-round the roses.\nPocket full of posies.",
-            "A gray room...\nA gray life...\nA dusty hair dryer..."
+            "A gray room...\nA gray life...\nA dusty hair dryer...",
+            "Ashes to ashes, dust to dust.",
+            "Do android brain dream of electric serpent?",
+            "You wake up to more nightmares.",
         };
-        public static HashSet<string> becomeStressed = new HashSet<string>()
+        public static PetHypnosQuoteCollection becomeStressed = new PetHypnosQuoteCollection()
         {
             "There must be something strange about things going wrong.",
-            "Interesting✰"
+            "Interesting✰",
+            "Heaven brings forth innumerable things to nurture man.",
+            "Are you ready✰",
+            "Rec ✰ Hypnos Live",
+            "This will be the world's most wonderful fight!",
+            "This will be the world's second most wonderful fight!"
+        };
+        public static PetHypnosQuoteCollection becomeStressedWithItself = new PetHypnosQuoteCollection()
+        {
+            "Let's start.",
+            "Close your eyes.",
+            "Neuron✰ Blast!",
+            "Y2000 Mindcrash!",
+            "Just try to take me down✰",
+            "Are you ready✰",
+            "Ashes✰ Ashes✰ You. Down."
         };
     }
 }

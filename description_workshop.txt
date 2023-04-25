@@ -72,4 +72,7 @@ artist: 再三棘
 artist: 嘉登糖
 [img] https://jesterromut.github.io/resources/img/Hypnos/MyHypnos5.png [/img]
 
+artist: 嘉登糖
+[img] https://jesterromut.github.io/resources/img/Hypnos/hyptrick.gif [/img]
+
 （呱！修普诺斯强袭创意工坊！）
