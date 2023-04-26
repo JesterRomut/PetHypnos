@@ -5,18 +5,17 @@ it's a mod of a mod of a mod
 
 the cause of this is i violated the rules of the hypnos server(draw hypnos p0rn), after that i said i will work for hypnos for 24/7 therefore i worked on fanarts
 事情的起因是我犯了修普诺斯服务器的规则（画修普诺斯的烧图），于是我说我要24/7的给修普诺斯画同人图，于是我就画了
+it's the mod of joke, and i am a big joker
 
 mod includes:
 - pet hypnos, can be used as pet or light pet (no difference except buff icon and item icon)
 - pet hypnos comes with its little aergia neurons
 - aergia neurons can somewhat be attracted to mouse and emit a little pink light
-- pet buff tooltip changes every time when you load the mod
 - toy aergian technistaff(same behavior as aergian technistaff's fandom page) dropped by pet hypnos (with its g0res) when defeating hypnos boss
 本mod含有：
 - 可以放在宠物槽或者照明宠物槽的修普诺斯宠物（除了buff图标和物品图标没有区别）
 - 小修普诺斯带着它的小埃吉亚神经元
 - 小埃吉亚神经元会被鼠标吸引然后发出一点点粉光
-- 宠物的buff介绍每次加载游戏都会变
 - 在宠物00存在时击败boss00掉落的玩具埃吉亚神经元杖（和宠物00的石块一起掉落）
 
 [img] https://jesterromut.github.io/resources/img/Hypnos/toystaff2.gif [/img]
@@ -25,43 +24,49 @@ mod includes:
 come with effects when calamity mod is present
 [img] https://jesterromut.github.io/resources/img/Hypnos/particle3.png [/img]
 
-How to obtain:
-- this mod can run independently, but the only way to obtain the pet is defeating hypnos boss (hypnos in calamity mod) or you can use cheat
+mod config
+[img] https://jesterromut.github.io/resources/img/Hypnos/mute.png [/img]
+
+How to obtain pet item:
+- defeating hypnos boss
+- 1/42 chance dropped by boc while hypnos in calamity mod is not enabled
+- cheat
 如何获取：
-- 这个mod可以独立运行，但是搞到宠物的唯一方法是宰了修普诺斯boss，除了这个就只能开cheater
+- 宰了修普诺斯boss
+- 当修普诺斯mod不存在时，1/42几率由克脑掉落
+- 开cheater
 
 Q: other exomechs?
-if i violated rules of a regular exomech server...
-
+A: if i violated rules of a regular exomech server...
 Q: 别的巨械？
-如果我违反了巨械服务器的规则...
+A: 如果我违反了巨械服务器的规则...
 
-Q: your pixel is staggeringly ugly
+Q: your pixel (design) is staggeringly ugly
 sorry! you can draw a better version
-
-Q: 你的像素好几把丑，依托答辩
-对不起！你可以画更好的，你最好不要指望画高精的小画家突然去画像素
+Q: 你的像素（设计）好几把丑，依托答辩
+A: 对不起！你可以画更好的
 
 Q: i hate anime
-i respect you
-
+A: i respect you
 Q: 我恨二刺螈
-我遵众你
+A: 我遵众你
 
 We live for hypnos! (and its fan arts)
 follow me on pixiv: https://www.pixiv.net/member.php?id=70124361
+follow me on twitter: https://twitter.com/JesterRomut
 follow hypnos on steam workshop: https://steamcommunity.com/sharedfiles/filedetails/?id=2865345084
 follow source code: https://github.com/JesterRomut/PetHypnos/
 
 关注pixiv喵，关注pixiv谢谢喵: https://www.pixiv.net/member.php?id=70124361
+关注腿特喵：https://twitter.com/JesterRomut
 关注修普诺斯喵：https://steamcommunity.com/sharedfiles/filedetails/?id=2865345084
 关注源码喵：https://github.com/JesterRomut/PetHypnos/
 
 artist: 嘉登糖
-[img] https://jesterromut.github.io/resources/img/Hypnos/myHypnos1.png [/img]
+[img] https://jesterromut.github.io/resources/img/Hypnos/hyptrick.gif [/img]
 
 artist: 嘉登糖
-[img] https://jesterromut.github.io/resources/img/Hypnos/MyHypnos4.png [/img]
+[img] https://jesterromut.github.io/resources/img/Hypnos/myHypnos1.png [/img]
 
 artist: 三玖
 [img] https://jesterromut.github.io/resources/img/Hypnos/RandvarysHypnos.png [/img]
@@ -70,9 +75,7 @@ artist: 再三棘
 [img] https://jesterromut.github.io/resources/img/Hypnos/ZSJsHypnos.png [/img]
 
 artist: 嘉登糖
-[img] https://jesterromut.github.io/resources/img/Hypnos/MyHypnos5.png [/img]
+[img] https://jesterromut.github.io/resources/img/Hypnos/MyHypnos4.png [/img]
 
-artist: 嘉登糖
-[img] https://jesterromut.github.io/resources/img/Hypnos/hyptrick.gif [/img]
-
-（呱！修普诺斯强袭创意工坊！）
+your nightmare
+hypnos hypnos hypnos hypnos hypnos hypnos hypnos hypnos hypnos hypnos hypnos hypnos hypnos hypnos hypnos hypnos hypnos hypnos hypnos hypnos hypnos hypnos hypnos hypnos hypnos hypnos hypnos hypnos

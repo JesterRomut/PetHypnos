@@ -38,25 +38,40 @@ namespace PetHypnos.Hypnos
     }
 
     [JITWhenModsEnabled("CalamityMod")]
-    public static class CalamityWeakRef
+    internal static class CalamityWeakRef
     {
-        public static void InitRing(Projectile projectile, ref object ring, Vector2 position)
+        public static void InitRing(float scale, ref object ring, Vector2 position)
         {
             //aura = new StrongBloom(Projectile.Center, Vector2.Zero, Color.HotPink * 1.1f, Projectile.scale * (1f + Main.rand.NextFloat(0f, 1.5f)) * 1.5f, 40);
-            ring = new BloomRing(position, Vector2.Zero, Color.Purple * 1.2f, projectile.scale * 0.9f, 40);
+            ring = new BloomRing(position, Vector2.Zero, Color.Purple * 1.2f, scale * 0.9f, 40);
             //GeneralParticleHandler.SpawnParticle(aura);
             GeneralParticleHandler.SpawnParticle((BloomRing)ring);
         }
-        public static void UpdateRing(Projectile projectile, ref object ring, Vector2 position)
+        public static void UpdateRing(Vector2 velocity, ref object ring, Vector2 position)
         {
             ((BloomRing)ring).Position = position;
-            ((BloomRing)ring).Velocity = projectile.velocity;
+            //((BloomRing)ring).Velocity = velocity;
             ((BloomRing)ring).Time = 0;
+        }
+        public static void InitRing(Projectile projectile, ref object ring, Vector2 position)
+        {
+            InitRing(projectile.scale, ref ring, position);
+        }
+        public static void UpdateRing(Projectile projectile, ref object ring, Vector2 position)
+        {
+            UpdateRing(projectile.velocity, ref ring, position);
+        }
+
+        public static void KillRing(ref object ring)
+        {
+            if (ring == null) return;
+            ((BloomRing)ring)?.Kill();
         }
         public static void KillParticle(ref object ring)
         {
-            ((BloomRing)ring).Kill();
+            KillRing(ref ring);
         }
+
         public static void DrawLightning(ref object lightningDrawer, ref object lightningBackgroundDrawer, Vector2 center, Vector2 pluglocation, Delegate widthFunction, Delegate colorFunction, Delegate backgroundWidthFunction, Delegate backgroundColorFunction)
         {
             if (lightningDrawer == null)
@@ -505,7 +520,7 @@ namespace PetHypnos.Hypnos
                 if (red)
                 {
                     liiight = Color.HotPink.ToVector3() * 1.2f;
-                    
+
                 }
 
                 Lighting.AddLight(Projectile.Center, liiight);
@@ -530,10 +545,10 @@ namespace PetHypnos.Hypnos
             {
                 Vector2 dest = ((BaseHypnosPetProjectile)master.ModProjectile).RCenter;
                 DrawLightning(dest);
-                foreach(int i in Enumerable.Range(0, (int)(Projectile.Center.Distance(dest) / 32)))
+                foreach (int i in Enumerable.Range(0, (int)(Projectile.Center.Distance(dest) / 32)))
                 {
                     Lighting.AddLight(AIUtils.NearestPos(Projectile.Center, dest, Projectile.Center.Distance(dest) - i * 32), Color.Aqua.ToVector3() * 0.5f);
-                    
+
                 }
             }
             return true;
@@ -632,7 +647,7 @@ namespace PetHypnos.Hypnos
             //ring = new BloomRing(Projectile.Center, Vector2.Zero, Color.Purple * 1.2f, Projectile.scale * 1.5f, 40);
             //GeneralParticleHandler.SpawnParticle(aura);
             //GeneralParticleHandler.SpawnParticle(ring);
-            
+
 
             PetHypnosQuote.HypnosQuote(Projectile, PetHypnosQuotes.appear.RandomQuote());
 
@@ -692,14 +707,14 @@ namespace PetHypnos.Hypnos
                 Vector2 vectorToIdlePosition = idlePosition - Projectile.Center;
                 float distanceToIdlePosition = vectorToIdlePosition.Length();
 
-                if (AIUtils.bossIsAlive )
+                if (AIUtils.bossIsAlive)
                 {
-                    if(behavior != HypnosBehavior.Stressed)
+                    if (behavior != HypnosBehavior.Stressed)
                     {
                         behavior = HypnosBehavior.Stressed;
                         PetHypnosQuote.HypnosQuote(Projectile, AIUtils.hypnosBossIsAlive ? PetHypnosQuotes.becomeStressedWithItself.RandomQuote() : PetHypnosQuotes.becomeStressed.RandomQuote());
                     }
-                    
+
                 }
                 else if (Main.myPlayer == Projectile.owner && ((modPlayer.mouseWorld - player.Center).Length() < 300f && distanceToIdlePosition < 400f))
                 {
@@ -863,7 +878,7 @@ namespace PetHypnos.Hypnos
             vector *= 34f;
             Main.dust[num5].position = RCenter - vector;
 
-            
+
         }
 
         public Vector2 RCenter => Projectile.Center + new Vector2(Projectile.width, Projectile.height);

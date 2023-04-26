@@ -105,6 +105,8 @@ namespace PetHypnos
         public Vector2 positionOld;
         public Vector2 mouseWorldOldForIdleCheck;
 
+        
+
         public override void PostUpdateMiscEffects()
         {
             if (Player.whoAmI == Main.myPlayer && Main.netMode == NetmodeID.MultiplayerClient && shouldSyncMouse)
@@ -372,16 +374,26 @@ namespace PetHypnos
     {
         public override void ModifyNPCLoot(NPC npc, NPCLoot npcLoot)
         {
-            if (npc.boss && (ModCompatibility.Hypnos?.TryFind("HypnosBoss", out ModNPC hypBoss) ?? false))
+            if (npc.boss)
             {
                 //object comp = typeof(Pawn).GetMethod("GetComp").MakeGenericMethod(ModCompatibility.PickUpAndHaul.CompHauledToInventory).Invoke(pawn, null);
 
                 //int hypBossType = typeof(ModContent).GetMethod("NPCType").MakeGenericMethod(hypBoss).Invoke();
                 // First, we need to check the npc.type to see if the code is running for the vanilla NPCwe want to change
-                if (npc.type == hypBoss.Type)
+                if (ModCompatibility.hypnosEnabled)
                 {
-                    npcLoot.Add(ItemDropRule.Common(ModContent.ItemType<HypnosPetItem>()));
-
+                    if (npc.type == ModCompatibility.HypnosBoss)
+                    {
+                        npcLoot.Add(ItemDropRule.Common(ModContent.ItemType<HypnosPetItem>()));
+                    }
+                }
+                else
+                {
+                    
+                    if (npc.type == NPCID.BrainofCthulhu)
+                    {
+                        npcLoot.Add(ItemDropRule.Common(ModContent.ItemType<HypnosPetItem>(), 42));
+                    }
                 }
                 // We can use other if statements here to adjust the drop rules of other vanilla NPC
             }

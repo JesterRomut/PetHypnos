@@ -17,6 +17,7 @@ using System.IO;
 using System.Reflection;
 using Mono.Cecil;
 using static Terraria.Utilities.NPCUtils;
+using PetHypnos.Hypnos;
 
 namespace PetHypnos
 {
@@ -31,6 +32,30 @@ namespace PetHypnos
         public int currentGhostHypnosIndex = -1;
         public int desiredNeurons = 0;
         public Item technistaff = null;
+        public object ring = null;
+
+        internal Vector2 RCenter => Player.Center;
+
+        public override void PostUpdate()
+        {
+            if (ModCompatibility.calamityEnabled)
+            {
+                if (desiredNeurons > 0 && currentGhostHypnosIndex == -1)
+                {
+                    if (ring == null)
+                    {
+                        CalamityWeakRef.InitRing(0.7f, ref ring, RCenter);
+                    }
+                    CalamityWeakRef.UpdateRing(Player.velocity, ref ring, RCenter);
+                }
+                else
+                {
+                    CalamityWeakRef.KillRing(ref ring);
+                    ring = null;
+                }
+            }
+            
+        }
     }
 }
 
@@ -643,6 +668,7 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
 
         public bool returningToPlayer = false;
         public static readonly int startTimeout = 60;
+        public object ring = null;
 
         public static readonly Asset<Texture2D> tex = ModContent.Request<Texture2D>("PetHypnos/Hypnos/HypnosPetProjectile");
         public override bool PreDraw(ref Color lightColor)
@@ -683,7 +709,7 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             Projectile.aiStyle = -1;
             Projectile.ignoreWater = true;
             Projectile.netImportant = true;
-            Projectile.scale = 0.7f;
+            //Projectile.scale = 0.7f;
             Projectile.minion = true;
             Projectile.timeLeft = 300;
             base.Projectile.minionSlots = 0f;
@@ -691,14 +717,22 @@ namespace PetHypnos.Hypnos.ToyAergianTechnistaff
             Projectile.usesLocalNPCImmunity = true;
             Projectile.localNPCHitCooldown = 1;
             Projectile.DamageType = DamageClass.Summon;
-
         }
 
         public override void AI()
         {
             Projectile.rotation = Projectile.velocity.X * 0.05f;
 
-
+            if (ModCompatibility.calamityEnabled)
+            {
+                if (ring == null)
+                {
+                    CalamityWeakRef.InitRing(0.7f, ref ring, Projectile.Center);
+                }
+                //CalamityWeakRef.ChangeRingColor(ref ring, Color.Purple, Projectile.scale * 2);
+                CalamityWeakRef.UpdateRing(Projectile, ref ring, Projectile.Center);
+            }
+            
 
             frameInterval++;
             if (frameInterval >= frameSpeed)
